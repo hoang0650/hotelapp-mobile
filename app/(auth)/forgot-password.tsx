@@ -1,12 +1,22 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useAppSelector } from '../../store';
+import { selectIsAuthenticated } from '../../store/selectors/authSelectors';
 
 export default function ForgotPasswordScreen() {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isRequestSent, setIsRequestSent] = useState(false);
+
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated]);
 
   const handleSendResetLink = () => {
     // Kiểm tra dữ liệu nhập vào

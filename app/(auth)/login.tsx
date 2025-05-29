@@ -3,7 +3,7 @@ import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../store';
-import { selectAuthError, selectAuthStatus, selectIsTwoFactorRequired, selectTwoFactorUserId } from '../../store/selectors/authSelectors';
+import { selectAuthError, selectAuthStatus, selectIsAuthenticated, selectIsTwoFactorRequired, selectTwoFactorUserId } from '../../store/selectors/authSelectors';
 import { clearAuthError, resetTwoFactor } from '../../store/slices/authSlice';
 import { loginUser } from '../../store/thunks/authThunks';
 
@@ -11,6 +11,7 @@ export default function LoginScreen() {
   const dispatch = useAppDispatch();
   const authStatus = useAppSelector(selectAuthStatus);
   const authError = useAppSelector(selectAuthError);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const isTwoFactorRequired = useAppSelector(selectIsTwoFactorRequired);
   const twoFactorUserId = useAppSelector(selectTwoFactorUserId);
 
@@ -20,14 +21,19 @@ export default function LoginScreen() {
   const [showPassword, setShowPassword] = useState(false);
   
   useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/(tabs)');
+      return;
+    }
+
     if (authError && authStatus === 'failed') {
       Alert.alert('Đăng nhập thất bại', authError.message);
       dispatch(clearAuthError());
     }
-    if (authStatus === 'succeeded' && !isTwoFactorRequired) {
+    if (authStatus === 'succeeded' && !isTwoFactorRequired && !isAuthenticated) {
       router.replace('/(tabs)'); 
     }
-  }, [authStatus, authError, dispatch, isTwoFactorRequired]);
+  }, [authStatus, authError, dispatch, isTwoFactorRequired, isAuthenticated]);
 
   const handleLogin = () => {
     if (isTwoFactorRequired) {

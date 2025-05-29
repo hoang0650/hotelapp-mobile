@@ -3,61 +3,51 @@ import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../store';
-import { selectAuthError, selectAuthStatus, selectIsTwoFactorRequired, selectTwoFactorUserId } from '../../store/selectors/authSelectors';
-import { clearAuthError, resetTwoFactor } from '../../store/slices/authSlice';
-import { loginUser } from '../../store/thunks/authThunks';
+import { selectAuthError, selectAuthStatus, selectIsAuthenticated, selectIsTwoFactorRequired, selectTwoFactorUserId } from '../../store/selectors/authSelectors';
+import { clearAuthError } from '../../store/slices/authSlice';
 
 export default function RegisterScreen() {
   const dispatch = useAppDispatch();
   const authStatus = useAppSelector(selectAuthStatus);
   const authError = useAppSelector(selectAuthError);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const isTwoFactorRequired = useAppSelector(selectIsTwoFactorRequired);
   const twoFactorUserId = useAppSelector(selectTwoFactorUserId);
 
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [twoFactorCode, setTwoFactorCode] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   
   useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/(tabs)');
+      return;
+    }
+
     if (authError && authStatus === 'failed') {
-      Alert.alert('Đăng nhập thất bại', authError.message);
+      Alert.alert('Đăng ký thất bại', authError.message);
       dispatch(clearAuthError());
     }
-    if (authStatus === 'succeeded' && !isTwoFactorRequired) {
-      router.replace('/(tabs)'); 
-    }
-  }, [authStatus, authError, dispatch, isTwoFactorRequired]);
+  }, [isAuthenticated, authStatus, authError, dispatch]);
 
-  const handleLogin = () => {
-    if (isTwoFactorRequired) {
-      if (!twoFactorCode) {
-        Alert.alert('Lỗi', 'Vui lòng nhập mã xác thực 2 yếu tố.');
-        return;
-      }
-      if (!twoFactorUserId) {
-        Alert.alert('Lỗi', 'Thiếu thông tin người dùng cho xác thực 2 yếu tố.');
-        dispatch(resetTwoFactor());
-        return;
-      }
-      dispatch(loginUser({ email, password, twoFactorCode }));
-    } else {
-      if (!email || !password) {
-        Alert.alert('Lỗi', 'Vui lòng nhập email và mật khẩu.');
-        return;
-      }
-      dispatch(loginUser({ email, password }));
+  const handleRegister = () => {
+    if (!username || !email || !password || !confirmPassword) {
+      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin.');
+      return;
     }
+    if (password !== confirmPassword) {
+      Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp.');
+      return;
+    }
+
+    console.log("Registering with:", { username, email, password });
+    Alert.alert("Thông báo", "Chức năng đăng ký đang được phát triển.");
   };
 
-  const handleCancelTwoFactor = () => {
-    dispatch(resetTwoFactor());
-    setEmail('');
-    setPassword('');
-    setTwoFactorCode('');
-  };
-
-  const isLoading = authStatus === 'loading';
+  const isLoading = false;
 
   return (
     <KeyboardAvoidingView 
@@ -72,105 +62,87 @@ export default function RegisterScreen() {
             style={styles.logo}
           />
           <Text style={styles.appName}>Phần mềm Quản lý Khách sạn</Text>
-          <Text style={styles.slogan}>Giải pháp quản lý toàn diện cho khách sạn của bạn</Text>
+          <Text style={styles.slogan}>Tạo tài khoản mới</Text>
         </View>
 
         <View style={styles.formContainer}>
-          {isTwoFactorRequired ? (
-            <>
-              <Text style={styles.welcomeText}>Xác thực hai yếu tố</Text>
-              <Text style={styles.instructionText}>
-                Vui lòng nhập mã xác thực từ ứng dụng Authenticator của bạn.
-              </Text>
-              <View style={styles.inputContainer}>
-                <FontAwesome name="shield" size={20} color="#bfbfbf" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Mã xác thực (6 chữ số)"
-                  value={twoFactorCode}
-                  onChangeText={setTwoFactorCode}
-                  keyboardType="number-pad"
-                  maxLength={6}
-                />
-              </View>
-              <TouchableOpacity 
-                style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
-                onPress={handleLogin}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={styles.loginButtonText}>Xác nhận</Text>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.cancelButton}
-                onPress={handleCancelTwoFactor}
-                disabled={isLoading}
-              >
-                <Text style={styles.cancelButtonText}>Hủy</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <Text style={styles.welcomeText}>Đăng nhập</Text>
-              
-              <View style={styles.inputContainer}>
-                <FontAwesome name="envelope" size={20} color="#bfbfbf" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Email"
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                />
-              </View>
-              
-              <View style={styles.inputContainer}>
-                <FontAwesome name="lock" size={20} color="#bfbfbf" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Mật khẩu"
-                  secureTextEntry={!showPassword}
-                  value={password}
-                  onChangeText={setPassword}
-                />
-                <TouchableOpacity 
-                  style={styles.eyeIcon}
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <FontAwesome name={showPassword ? 'eye-slash' : 'eye'} size={20} color="#bfbfbf" />
-                </TouchableOpacity>
-              </View>
+          <Text style={styles.welcomeText}>Đăng ký</Text>
+          
+          <View style={styles.inputContainer}>
+            <FontAwesome name="user" size={20} color="#bfbfbf" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Tên đăng nhập"
+              value={username}
+              onChangeText={setUsername}
+              autoCapitalize="none"
+            />
+          </View>
 
-              <View style={styles.forgotPasswordContainer}>
-                <TouchableOpacity onPress={() => router.push('/forgot-password')}>
-                  <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
-                </TouchableOpacity>
-              </View>
+          <View style={styles.inputContainer}>
+            <FontAwesome name="envelope" size={20} color="#bfbfbf" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Email"
+              value={email}
+              onChangeText={setEmail}
+              autoCapitalize="none"
+              keyboardType="email-address"
+            />
+          </View>
+          
+          <View style={styles.inputContainer}>
+            <FontAwesome name="lock" size={20} color="#bfbfbf" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Mật khẩu"
+              secureTextEntry={!showPassword}
+              value={password}
+              onChangeText={setPassword}
+            />
+            <TouchableOpacity 
+              style={styles.eyeIcon}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <FontAwesome name={showPassword ? 'eye-slash' : 'eye'} size={20} color="#bfbfbf" />
+            </TouchableOpacity>
+          </View>
 
-              <TouchableOpacity 
-                style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
-                onPress={handleLogin}
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={styles.loginButtonText}>Đăng nhập</Text>
-                )}
-              </TouchableOpacity>
-              
-              <View style={styles.registerContainer}>
-                <Text style={styles.registerText}>Chưa có tài khoản? </Text>
-                <TouchableOpacity onPress={() => router.push('/register')}>
-                  <Text style={styles.registerLink}>Đăng ký ngay</Text>
-                </TouchableOpacity>
-              </View>
-            </>
-          )}
+          <View style={styles.inputContainer}>
+            <FontAwesome name="lock" size={20} color="#bfbfbf" style={styles.inputIcon} />
+            <TextInput
+              style={styles.input}
+              placeholder="Xác nhận mật khẩu"
+              secureTextEntry={!showConfirmPassword}
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+            />
+            <TouchableOpacity 
+              style={styles.eyeIcon}
+              onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+            >
+              <FontAwesome name={showConfirmPassword ? 'eye-slash' : 'eye'} size={20} color="#bfbfbf" />
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity 
+            style={[styles.actionButton, isLoading && styles.actionButtonDisabled]}
+            onPress={handleRegister}
+            disabled={isLoading}
+          >
+            {isLoading ? (
+              <ActivityIndicator color="white" />
+            ) : (
+              <Text style={styles.actionButtonText}>Đăng ký</Text>
+            )}
+          </TouchableOpacity>
+          
+          <View style={styles.loginContainer}>
+            <Text style={styles.loginText}>Đã có tài khoản? </Text>
+            <TouchableOpacity onPress={() => router.push('/login')}>
+              <Text style={styles.loginLink}>Đăng nhập ngay</Text>
+            </TouchableOpacity>
+          </View>
         </View>
 
         <View style={styles.footer}>
@@ -260,39 +232,32 @@ const styles = StyleSheet.create({
   eyeIcon: {
     padding: 5,
   },
-  forgotPasswordContainer: {
-    alignItems: 'flex-end',
-    marginBottom: 20,
-  },
-  forgotPasswordText: {
-    color: '#1890ff',
-    fontSize: 14,
-  },
-  loginButton: {
+  actionButton: {
     backgroundColor: '#1890ff',
     borderRadius: 8,
     height: 50,
     justifyContent: 'center',
     alignItems: 'center',
+    marginTop: 10,
   },
-  loginButtonDisabled: {
+  actionButtonDisabled: {
     backgroundColor: '#91caff',
   },
-  loginButtonText: {
+  actionButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
   },
-  registerContainer: {
+  loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 20,
   },
-  registerText: {
+  loginText: {
     fontSize: 14,
     color: '#666',
   },
-  registerLink: {
+  loginLink: {
     fontSize: 14,
     color: '#1890ff',
     fontWeight: 'bold',
@@ -304,20 +269,5 @@ const styles = StyleSheet.create({
   footerText: {
     color: '#999',
     fontSize: 12,
-  },
-  cancelButton: {
-    marginTop: 15,
-    backgroundColor: '#f0f2f5',
-    borderRadius: 8,
-    height: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#d9d9d9'
-  },
-  cancelButtonText: {
-    color: '#595959',
-    fontSize: 16,
-    fontWeight: 'bold',
   },
 }); 

@@ -1,7 +1,9 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { Link, router, useLocalSearchParams } from 'expo-router';
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { useAppSelector } from '../../store';
+import { selectIsAuthenticated } from '../../store/selectors/authSelectors';
 
 export default function ResetPasswordScreen() {
   const [password, setPassword] = useState('');
@@ -11,9 +13,16 @@ export default function ResetPasswordScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   
-  // Giả lập token từ URL
   const params = useLocalSearchParams();
   const resetToken = params.token || '123456';
+
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace('/(tabs)');
+    }
+  }, [isAuthenticated]);
 
   const handleResetPassword = () => {
     // Kiểm tra dữ liệu nhập vào
