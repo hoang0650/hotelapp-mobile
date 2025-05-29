@@ -1,25 +1,28 @@
-import { useState } from 'react';
-import { StyleSheet, View, Text, Image, TouchableOpacity, ScrollView, Switch, Alert } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
 import { router } from 'expo-router';
-
-// Thông tin người dùng giả lập
-const mockUser = {
-  id: 'user1',
-  fullName: 'Nguyễn Văn A',
-  email: 'nguyenvana@example.com',
-  phone: '0912345678',
-  position: 'Quản lý',
-  avatar: 'https://randomuser.me/api/portraits/men/32.jpg',
-  joinDate: '15/06/2023',
-};
+import { useEffect, useState } from 'react';
+import { Alert, Image, ScrollView, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { useAppDispatch, useAppSelector } from '../../store';
+import { selectCurrentUser, selectIsAuthenticated } from '../../store/selectors/authSelectors';
+import { logoutUser } from '../../store/slices/authSlice';
 
 export default function ProfileScreen() {
+  const dispatch = useAppDispatch();
+  const currentUser = useAppSelector(selectCurrentUser);
+  const isAuthenticated = useAppSelector(selectIsAuthenticated);
+
   // State cho các cài đặt
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [darkModeEnabled, setDarkModeEnabled] = useState(false);
   const [fingerprintEnabled, setFingerprintEnabled] = useState(false);
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
+
+  // Xử lý khi trạng thái xác thực thay đổi (ví dụ: sau khi logout)
+  useEffect(() => {
+    if (!isAuthenticated) {
+      router.replace('/(auth)/login');
+    }
+  }, [isAuthenticated]);
 
   // Xử lý đăng xuất
   const handleLogout = () => {
@@ -32,40 +35,55 @@ export default function ProfileScreen() {
           text: 'Đăng xuất', 
           style: 'destructive',
           onPress: () => {
-            // Chuyển hướng đến màn hình đăng nhập
-            router.replace('/login');
+            dispatch(logoutUser());
+            // Việc điều hướng sẽ được xử lý bởi useEffect ở trên
+            // hoặc trong _layout.tsx của (tabs)
           } 
         }
       ]
     );
   };
 
+  // Nếu chưa có thông tin người dùng (có thể đang fetch hoặc đã logout), không render gì hoặc hiển thị loading
+  if (!currentUser) {
+    // Có thể thêm một ActivityIndicator ở đây nếu muốn
+    return null; 
+  }
+
   return (
     <ScrollView style={styles.container}>
       {/* Phần thông tin người dùng */}
       <View style={styles.profileHeader}>
-        <Image source={{ uri: mockUser.avatar }} style={styles.avatar} />
-        <Text style={styles.userName}>{mockUser.fullName}</Text>
-        <Text style={styles.userPosition}>{mockUser.position}</Text>
+        <Image 
+          testID="profileAvatar"
+          source={{ uri: currentUser.avatar || 'https://placekitten.com/100/100' }} 
+          style={styles.avatar} 
+        />
+        <Text testID="profileFullName" style={styles.userName}>{currentUser.fullName || currentUser.username}</Text>
+        <Text testID="profileRole" style={styles.userPosition}>{currentUser.role || 'Chưa có thông tin'}</Text>
         
         <View style={styles.userInfoCard}>
           <View style={styles.userInfoRow}>
             <FontAwesome name="envelope" size={16} color="#1890ff" style={styles.infoIcon} />
             <Text style={styles.infoLabel}>Email:</Text>
-            <Text style={styles.infoValue}>{mockUser.email}</Text>
+            <Text testID="profileEmail" style={styles.infoValue}>{currentUser.email}</Text>
           </View>
           
-          <View style={styles.userInfoRow}>
-            <FontAwesome name="phone" size={16} color="#1890ff" style={styles.infoIcon} />
-            <Text style={styles.infoLabel}>Điện thoại:</Text>
-            <Text style={styles.infoValue}>{mockUser.phone}</Text>
-          </View>
+          {currentUser.phone && (
+            <View style={styles.userInfoRow}>
+              <FontAwesome name="phone" size={16} color="#1890ff" style={styles.infoIcon} />
+              <Text style={styles.infoLabel}>Điện thoại:</Text>
+              <Text testID="profilePhone" style={styles.infoValue}>{currentUser.phone}</Text>
+            </View>
+          )}
           
-          <View style={styles.userInfoRow}>
-            <FontAwesome name="calendar" size={16} color="#1890ff" style={styles.infoIcon} />
-            <Text style={styles.infoLabel}>Ngày tham gia:</Text>
-            <Text style={styles.infoValue}>{mockUser.joinDate}</Text>
-          </View>
+          {currentUser.createdAt && (
+            <View style={styles.userInfoRow}>
+              <FontAwesome name="calendar" size={16} color="#1890ff" style={styles.infoIcon} />
+              <Text style={styles.infoLabel}>Ngày tham gia:</Text>
+              <Text testID="profileCreatedAt" style={styles.infoValue}>{new Date(currentUser.createdAt).toLocaleDateString('vi-VN')}</Text>
+            </View>
+          )}
         </View>
       </View>
 

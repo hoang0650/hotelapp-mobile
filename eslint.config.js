@@ -7,4 +7,20 @@ module.exports = defineConfig([
   {
     ignores: ['dist/*'],
   },
+  {
+    files: ['__mocks__/**/*.js', '**/*.test.js', '**/*.test.tsx'], // Áp dụng cho file mocks và tests
+    languageOptions: {
+      globals: {
+        jest: 'readonly', // Hoặc 'writable' nếu bạn mock jest object
+        expect: 'readonly',
+        test: 'readonly',
+        describe: 'readonly',
+        beforeEach: 'readonly',
+        afterEach: 'readonly',
+        beforeAll: 'readonly',
+        afterAll: 'readonly',
+        it: 'readonly', // Alias cho test
+      },
+    },
+  }
 ]);

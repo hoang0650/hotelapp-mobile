@@ -7,4 +7,6 @@ export const selectCurrentUser = (state: RootState) => selectAuthState(state).us
 export const selectIsAuthenticated = (state: RootState) => selectAuthState(state).isAuthenticated;
 export const selectAuthToken = (state: RootState) => selectAuthState(state).token;
 export const selectAuthStatus = (state: RootState) => selectAuthState(state).status;
-export const selectAuthError = (state: RootState) => selectAuthState(state).error; 
+export const selectAuthError = (state: RootState) => selectAuthState(state).error;
+export const selectIsTwoFactorRequired = (state: RootState): boolean => selectAuthState(state).isTwoFactorRequired;
+export const selectTwoFactorUserId = (state: RootState): string | null => selectAuthState(state).twoFactorUserId; 

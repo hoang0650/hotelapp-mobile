@@ -1,48 +1,32 @@
-import { useState } from 'react';
-import { StyleSheet, View, Text, TextInput, TouchableOpacity, Image, KeyboardAvoidingView, Platform, ScrollView, Alert, ActivityIndicator } from 'react-native';
-import { router, Link, useLocalSearchParams } from 'expo-router';
 import { FontAwesome } from '@expo/vector-icons';
+import { Link, router } from 'expo-router';
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 
-export default function ResetPasswordScreen() {
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+export default function ForgotPasswordScreen() {
+  const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  
-  // Giả lập token từ URL
-  const params = useLocalSearchParams();
-  const resetToken = params.token || '123456';
+  const [isRequestSent, setIsRequestSent] = useState(false);
 
-  const handleResetPassword = () => {
+  const handleSendResetLink = () => {
     // Kiểm tra dữ liệu nhập vào
-    if (!password || !confirmPassword) {
-      Alert.alert('Lỗi', 'Vui lòng nhập đầy đủ thông tin');
+    if (!email) {
+      Alert.alert('Lỗi', 'Vui lòng nhập địa chỉ email');
       return;
     }
 
-    if (password !== confirmPassword) {
-      Alert.alert('Lỗi', 'Mật khẩu xác nhận không khớp với mật khẩu đã nhập');
-      return;
-    }
-
-    if (password.length < 6) {
-      Alert.alert('Lỗi', 'Mật khẩu phải có ít nhất 6 ký tự');
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      Alert.alert('Lỗi', 'Email không hợp lệ');
       return;
     }
 
     setIsLoading(true);
     
-    // Giả lập API đặt lại mật khẩu
+    // Giả lập API gửi email đặt lại mật khẩu
     setTimeout(() => {
       setIsLoading(false);
-      setIsSuccess(true);
-      
-      // Chuyển hướng về trang đăng nhập sau 3 giây
-      setTimeout(() => {
-        router.replace('/login');
-      }, 3000);
+      setIsRequestSent(true);
     }, 1500);
   };
 
@@ -59,68 +43,41 @@ export default function ResetPasswordScreen() {
             style={styles.logo}
           />
           <Text style={styles.appName}>Phần mềm Quản lý Khách sạn</Text>
-          <Text style={styles.slogan}>Tạo mật khẩu mới cho tài khoản của bạn</Text>
+          <Text style={styles.slogan}>Khôi phục mật khẩu của bạn</Text>
         </View>
 
         <View style={styles.formContainer}>
-          {!isSuccess ? (
+          {!isRequestSent ? (
             <>
-              <Text style={styles.welcomeText}>Đặt lại mật khẩu</Text>
+              <Text style={styles.welcomeText}>Quên mật khẩu?</Text>
               <Text style={styles.instructionText}>
-                Vui lòng nhập mật khẩu mới cho tài khoản của bạn. Mật khẩu phải có ít nhất 6 ký tự.
+                Nhập địa chỉ email của bạn và chúng tôi sẽ gửi cho bạn một liên kết để đặt lại mật khẩu.
               </Text>
               
-              <View style={styles.tokenContainer}>
-                <Text style={styles.tokenLabel}>Mã xác nhận:</Text>
-                <Text style={styles.tokenValue}>{resetToken}</Text>
-              </View>
-              
               <View style={styles.inputContainer}>
-                <FontAwesome name="lock" size={20} color="#bfbfbf" style={styles.inputIcon} />
+                <FontAwesome name="envelope" size={20} color="#bfbfbf" style={styles.inputIcon} />
                 <TextInput
                   style={styles.input}
-                  placeholder="Mật khẩu mới"
-                  secureTextEntry={!showPassword}
-                  value={password}
-                  onChangeText={setPassword}
+                  placeholder="Email"
+                  value={email}
+                  onChangeText={setEmail}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
                 />
-                <TouchableOpacity 
-                  style={styles.eyeIcon}
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  <FontAwesome name={showPassword ? 'eye-slash' : 'eye'} size={20} color="#bfbfbf" />
-                </TouchableOpacity>
-              </View>
-              
-              <View style={styles.inputContainer}>
-                <FontAwesome name="lock" size={20} color="#bfbfbf" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Xác nhận mật khẩu mới"
-                  secureTextEntry={!showConfirmPassword}
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                />
-                <TouchableOpacity 
-                  style={styles.eyeIcon}
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  <FontAwesome name={showConfirmPassword ? 'eye-slash' : 'eye'} size={20} color="#bfbfbf" />
-                </TouchableOpacity>
               </View>
 
               <TouchableOpacity 
                 style={[styles.resetButton, isLoading && styles.resetButtonDisabled]}
-                onPress={handleResetPassword}
+                onPress={handleSendResetLink}
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <View style={styles.loadingContainer}>
                     <ActivityIndicator size="small" color="white" />
-                    <Text style={[styles.resetButtonText, styles.loadingText]}>Đang xử lý...</Text>
+                    <Text style={[styles.resetButtonText, styles.loadingText]}>Đang gửi...</Text>
                   </View>
                 ) : (
-                  <Text style={styles.resetButtonText}>Đặt lại mật khẩu</Text>
+                  <Text style={styles.resetButtonText}>Gửi liên kết đặt lại</Text>
                 )}
               </TouchableOpacity>
             </>
@@ -129,10 +86,16 @@ export default function ResetPasswordScreen() {
               <View style={styles.successIconContainer}>
                 <FontAwesome name="check" size={40} color="white" />
               </View>
-              <Text style={styles.successTitle}>Đặt lại mật khẩu thành công!</Text>
+              <Text style={styles.successTitle}>Yêu cầu đã được gửi!</Text>
               <Text style={styles.successText}>
-                Mật khẩu của bạn đã được cập nhật. Bạn sẽ được chuyển đến trang đăng nhập sau vài giây.
+                Chúng tôi đã gửi hướng dẫn đặt lại mật khẩu đến email của bạn. Vui lòng kiểm tra hộp thư (bao gồm cả thư rác).
               </Text>
+              <TouchableOpacity 
+                style={styles.resetPasswordButton}
+                onPress={() => router.push('/reset-password')}
+              >
+                <Text style={styles.resetButtonText}>Đặt lại mật khẩu</Text>
+              </TouchableOpacity>
             </View>
           )}
 
@@ -190,10 +153,7 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 10,
     padding: 20,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.1,
-    shadowRadius: 4,
+    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
     elevation: 3,
   },
   welcomeText: {
@@ -208,34 +168,13 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     lineHeight: 20,
   },
-  tokenContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: '#f9f9f9',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 15,
-    borderWidth: 1,
-    borderColor: '#e8e8e8',
-  },
-  tokenLabel: {
-    fontSize: 14,
-    color: '#666',
-    marginRight: 10,
-  },
-  tokenValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#1890ff',
-    letterSpacing: 1,
-  },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#e8e8e8',
     borderRadius: 8,
-    marginBottom: 15,
+    marginBottom: 20,
     paddingHorizontal: 10,
     height: 50,
     backgroundColor: '#f9f9f9',
@@ -247,9 +186,6 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 16,
     color: '#333',
-  },
-  eyeIcon: {
-    padding: 5,
   },
   resetButton: {
     backgroundColor: '#1890ff',
@@ -298,8 +234,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#666',
     textAlign: 'center',
-    marginBottom: 10,
+    marginBottom: 20,
     lineHeight: 20,
+  },
+  resetPasswordButton: {
+    backgroundColor: '#1890ff',
+    borderRadius: 8,
+    height: 50,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 10,
+    width: '100%',
   },
   linkContainer: {
     alignItems: 'center',

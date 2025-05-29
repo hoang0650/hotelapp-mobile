@@ -1,8 +1,6 @@
 import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig } from 'axios';
-import { store } from './index';
-import { logoutUser } from './slices/authSlice';
 
-const API_BASE_URL = 'http://localhost:3000/api'; 
+const API_BASE_URL = 'http://localhost:3000'; 
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
@@ -11,12 +9,21 @@ const apiClient: AxiosInstance = axios.create({
   },
 });
 
+// Biến để giữ hàm getState, sẽ được set từ bên ngoài
+let getStoreState: (() => any) | null = null;
+
+export const setGetStoreState = (fn: () => any) => {
+  getStoreState = fn;
+};
+
 // Request Interceptor: Tự động thêm token vào header
 apiClient.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    const token = store.getState().auth.token; // Lấy token từ Redux state
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
+    if (getStoreState) {
+      const token = getStoreState().auth.token;
+      if (token) {
+        config.headers.Authorization = `Bearer ${token}`;
+      }
     }
     return config;
   },
@@ -29,20 +36,12 @@ apiClient.interceptors.request.use(
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => response, // Trả về response nếu thành công
   (error: AxiosError) => {
-    // Xử lý lỗi cụ thể ở đây nếu cần
     if (error.response) {
       console.error('API Error Response:', error.response.data);
-      // Nếu lỗi là 401 Unauthorized (token hết hạn/không hợp lệ), tự động logout
-      if (error.response.status === 401) {
-        // Kiểm tra để tránh vòng lặp vô hạn nếu API logout cũng trả về 401
-        if (!error.config?.url?.includes('/users/login')) { // Hoặc đường dẫn API logout của bạn
-          store.dispatch(logoutUser());
-          // Có thể điều hướng người dùng về màn hình login ở đây nếu cần
-          // alert('Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.');
-        }
-      }
-      // Bạn có thể ném lại lỗi để xử lý cụ thể ở từng async thunk
-      // hoặc trả về một cấu trúc lỗi chuẩn hóa
+      // Không tự động logout ở đây nữa, để thunks xử lý
+      // if (error.response.status === 401) {
+      //   // ...
+      // }
       return Promise.reject(error.response.data); // Trả về phần data của lỗi để dễ xử lý hơn
     }
     // Lỗi không phải từ server (ví dụ: network error)

@@ -1,5 +1,5 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncThunk } from '@reduxjs/toolkit';
-import * as SecureStore from 'expo-secure-store';
 import apiClient from '../apiClient';
 import { API_ENDPOINTS } from '../apiEndpoints';
 import {
@@ -21,7 +21,7 @@ export const loginUser = createAsyncThunk<
   AppThunkApiConfig
 >(
   'auth/loginUser',
-  async (credentials, { rejectWithValue }) => {
+  async (credentials, { rejectWithValue, dispatch }) => {
     try {
       const response = await apiClient.post<ApiResponse<LoginResponseData>>(
         API_ENDPOINTS.LOGIN,
@@ -34,7 +34,7 @@ export const loginUser = createAsyncThunk<
           return responseData as TwoFactorRequiredData;
         } else if ('token' in responseData && 'user' in responseData) {
           const successData = responseData as LoginSuccessUserData;
-          await SecureStore.setItemAsync('authToken', successData.token);
+          await AsyncStorage.setItem('authToken', successData.token);
           return successData;
         } else {
           return rejectWithValue(handleApiError({ message: 'Invalid successful login response structure' }));
@@ -47,7 +47,8 @@ export const loginUser = createAsyncThunk<
         } as ApiErrorResponse);
       }
     } catch (error: unknown) {
-      return rejectWithValue(handleApiError(error));
+      const apiError = handleApiError(error);
+      return rejectWithValue(apiError);
     }
   }
 );
@@ -58,7 +59,7 @@ export const signupUser = createAsyncThunk<
   AppThunkApiConfig
 >(
   'auth/signupUser',
-  async (userData, { rejectWithValue }) => {
+  async (userData, { rejectWithValue, dispatch }) => {
     try {
       const response = await apiClient.post<ApiResponse<null>>(
         API_ENDPOINTS.SIGNUP,
@@ -74,7 +75,8 @@ export const signupUser = createAsyncThunk<
         } as ApiErrorResponse);
       }
     } catch (error: unknown) {
-      return rejectWithValue(handleApiError(error));
+      const apiError = handleApiError(error);
+      return rejectWithValue(apiError);
     }
   }
 );
@@ -85,9 +87,9 @@ export const fetchCurrentUser = createAsyncThunk<
   AppThunkApiConfig
 >(
   'auth/fetchCurrentUser',
-  async (_, { rejectWithValue }) => {
+  async (_, { rejectWithValue, dispatch }) => {
     try {
-      const token = await SecureStore.getItemAsync('authToken');
+      const token = await AsyncStorage.getItem('authToken');
       if (!token) {
         return rejectWithValue({ success: false, message: 'No token found, user needs to login.' } as ApiErrorResponse);
       }
@@ -96,15 +98,15 @@ export const fetchCurrentUser = createAsyncThunk<
       if (response.data.success && response.data.data) {
         return { user: response.data.data, token };
       } else {
-        await SecureStore.deleteItemAsync('authToken');
         return rejectWithValue({ 
             success: false, 
-            message: response.data.message || 'Invalid token or failed to fetch user data.', 
+            message: response.data.message || 'Invalid token or failed to fetch user data.',
             error: response.data.error 
         } as ApiErrorResponse);
       }
     } catch (error: unknown) {
-      return rejectWithValue(handleApiError(error));
+      const apiError = handleApiError(error);
+      return rejectWithValue(apiError);
     }
   }
 ); 

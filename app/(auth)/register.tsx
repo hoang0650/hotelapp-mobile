@@ -7,7 +7,7 @@ import { selectAuthError, selectAuthStatus, selectIsTwoFactorRequired, selectTwo
 import { clearAuthError, resetTwoFactor } from '../../store/slices/authSlice';
 import { loginUser } from '../../store/thunks/authThunks';
 
-export default function LoginScreen() {
+export default function RegisterScreen() {
   const dispatch = useAppDispatch();
   const authStatus = useAppSelector(selectAuthStatus);
   const authError = useAppSelector(selectAuthError);
@@ -78,7 +78,7 @@ export default function LoginScreen() {
         <View style={styles.formContainer}>
           {isTwoFactorRequired ? (
             <>
-              <Text style={styles.welcomeText} testID="twoFactorAuthTitle">Xác thực hai yếu tố</Text>
+              <Text style={styles.welcomeText}>Xác thực hai yếu tố</Text>
               <Text style={styles.instructionText}>
                 Vui lòng nhập mã xác thực từ ứng dụng Authenticator của bạn.
               </Text>
@@ -97,7 +97,6 @@ export default function LoginScreen() {
                 style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
                 onPress={handleLogin}
                 disabled={isLoading}
-                testID="confirmTwoFactorButton"
               >
                 {isLoading ? (
                   <ActivityIndicator color="white" />
@@ -109,14 +108,13 @@ export default function LoginScreen() {
                 style={styles.cancelButton}
                 onPress={handleCancelTwoFactor}
                 disabled={isLoading}
-                testID="cancelTwoFactorButton"
               >
                 <Text style={styles.cancelButtonText}>Hủy</Text>
               </TouchableOpacity>
             </>
           ) : (
             <>
-              <Text style={styles.welcomeText} testID="loginTitle">Đăng nhập</Text>
+              <Text style={styles.welcomeText}>Đăng nhập</Text>
               
               <View style={styles.inputContainer}>
                 <FontAwesome name="envelope" size={20} color="#bfbfbf" style={styles.inputIcon} />
@@ -157,7 +155,6 @@ export default function LoginScreen() {
                 style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
                 onPress={handleLogin}
                 disabled={isLoading}
-                testID="loginButton"
               >
                 {isLoading ? (
                   <ActivityIndicator color="white" />
@@ -221,7 +218,10 @@ const styles = StyleSheet.create({
     backgroundColor: 'white',
     borderRadius: 10,
     padding: 20,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
     elevation: 3,
   },
   welcomeText: {

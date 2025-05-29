@@ -1,5 +1,5 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createSlice, PayloadAction } from '@reduxjs/toolkit';
-import * as SecureStore from 'expo-secure-store';
 import { fetchCurrentUser, loginUser, signupUser } from '../thunks/authThunks';
 import { ApiErrorResponse, AuthState, LoginResponseData, User } from '../types';
 
@@ -25,7 +25,7 @@ const authSlice = createSlice({
       state.error = null;
       state.isTwoFactorRequired = false;
       state.twoFactorUserId = null;
-      SecureStore.deleteItemAsync('authToken');
+      AsyncStorage.removeItem('authToken');
     },
     clearAuthError: (state) => {
       state.error = null;
@@ -61,6 +61,7 @@ const authSlice = createSlice({
           state.status = 'succeeded';
           state.isTwoFactorRequired = false;
           state.twoFactorUserId = null;
+          AsyncStorage.setItem('authToken', payload.token);
         }
         state.error = null;
       })
@@ -101,6 +102,7 @@ const authSlice = createSlice({
         state.error = null;
         state.isTwoFactorRequired = false;
         state.twoFactorUserId = null;
+        AsyncStorage.setItem('authToken', action.payload.token);
       })
       .addCase(fetchCurrentUser.rejected, (state, action: PayloadAction<ApiErrorResponse | undefined>) => {
         state.status = 'failed';
@@ -110,6 +112,7 @@ const authSlice = createSlice({
         state.isAuthenticated = false;
         state.isTwoFactorRequired = false;
         state.twoFactorUserId = null;
+        AsyncStorage.removeItem('authToken');
       });
   },
 });

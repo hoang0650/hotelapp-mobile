@@ -16,6 +16,7 @@ import authReducer from './slices/authSlice';
 // import sepayReducer from './slices/sepaySlice';
 // import otaIntegrationReducer from './slices/otaIntegrationSlice';
 import { TypedUseSelectorHook, useDispatch as useReduxDispatch, useSelector as useReduxSelector } from 'react-redux';
+import { setGetStoreState } from './apiClient';
 
 const rootReducer = combineReducers({
   auth: authReducer,
@@ -58,6 +59,9 @@ export const store = configureStore({
       },
     }).concat(middlewares),
 });
+
+// Gọi setGetStoreState sau khi store đã được khởi tạo
+setGetStoreState(store.getState);
 
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
