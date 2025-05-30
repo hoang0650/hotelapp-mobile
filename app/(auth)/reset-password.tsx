@@ -1,7 +1,7 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { Link, router, useLocalSearchParams } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAppSelector } from '../../store';
 import { selectIsAuthenticated } from '../../store/selectors/authSelectors';
 
@@ -20,7 +20,7 @@ export default function ResetPasswordScreen() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/profile');
     }
   }, [isAuthenticated]);
 
@@ -93,12 +93,15 @@ export default function ResetPasswordScreen() {
                   value={password}
                   onChangeText={setPassword}
                 />
-                <TouchableOpacity 
-                  style={styles.eyeIcon}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.eyeIcon,
+                    pressed && styles.pressedItem
+                  ]}
                   onPress={() => setShowPassword(!showPassword)}
                 >
                   <FontAwesome name={showPassword ? 'eye-slash' : 'eye'} size={20} color="#bfbfbf" />
-                </TouchableOpacity>
+                </Pressable>
               </View>
               
               <View style={styles.inputContainer}>
@@ -110,16 +113,23 @@ export default function ResetPasswordScreen() {
                   value={confirmPassword}
                   onChangeText={setConfirmPassword}
                 />
-                <TouchableOpacity 
-                  style={styles.eyeIcon}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.eyeIcon,
+                    pressed && styles.pressedItem
+                  ]}
                   onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                 >
                   <FontAwesome name={showConfirmPassword ? 'eye-slash' : 'eye'} size={20} color="#bfbfbf" />
-                </TouchableOpacity>
+                </Pressable>
               </View>
 
-              <TouchableOpacity 
-                style={[styles.resetButton, isLoading && styles.resetButtonDisabled]}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.resetButton,
+                  isLoading && styles.resetButtonDisabled,
+                  pressed && styles.pressedItem
+                ]}
                 onPress={handleResetPassword}
                 disabled={isLoading}
               >
@@ -131,7 +141,7 @@ export default function ResetPasswordScreen() {
                 ) : (
                   <Text style={styles.resetButtonText}>Đặt lại mật khẩu</Text>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             </>
           ) : (
             <View style={styles.successContainer}>
@@ -147,9 +157,9 @@ export default function ResetPasswordScreen() {
 
           <View style={styles.linkContainer}>
             <Link href="/login" asChild>
-              <TouchableOpacity>
+              <Pressable style={({pressed}) => pressed && styles.pressedItem}>
                 <Text style={styles.link}>Quay lại đăng nhập</Text>
-              </TouchableOpacity>
+              </Pressable>
             </Link>
           </View>
         </View>
@@ -326,4 +336,7 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: 12,
   },
+  pressedItem: {
+    opacity: 0.7,
+  }
 }); 

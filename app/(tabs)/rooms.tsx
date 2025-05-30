@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { StyleSheet, FlatList, View, Text, TouchableOpacity, ActivityIndicator, Modal, TextInput, ScrollView } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, FlatList, Modal, Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 
 interface Room {
   id: string;
@@ -199,16 +199,17 @@ export default function RoomsScreen() {
   };
 
   const renderRoomItem = ({ item }: { item: Room }) => (
-    <TouchableOpacity 
-      style={[
-        styles.roomCard, 
-        viewMode === 'grid' && styles.roomCardGrid
+    <Pressable
+      style={({ pressed }) => [
+        styles.roomCard,
+        viewMode === 'grid' && styles.roomCardGrid,
+        pressed && styles.pressedItem
       ]}
     >
       <View style={styles.roomHeader}>
         <Text style={styles.roomNumber}>Phòng {item.roomNumber}</Text>
         <View style={[styles.statusBadge, { backgroundColor: getStatusColor(item.status) }]}>
-          <FontAwesome name={getStatusIcon(item.status)} size={12} color="white" />
+          <FontAwesome name={getStatusIcon(item.status) as any} size={12} color="white" />
           <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
         </View>
       </View>
@@ -218,74 +219,74 @@ export default function RoomsScreen() {
         <Text style={styles.roomFloor}>Tầng {item.floor}</Text>
       </View>
       <View style={styles.roomActions}>
-        <TouchableOpacity 
-          style={styles.actionButton}
+        <Pressable
+          style={({ pressed }) => [styles.actionButton, pressed && styles.pressedItem]}
           onPress={() => handleActionPress(item, 'updateStatus')}
         >
           <FontAwesome name="edit" size={16} color="#1890ff" />
           <Text style={styles.actionText}>Cập nhật</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.actionButton}
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [styles.actionButton, pressed && styles.pressedItem]}
           onPress={() => handleActionPress(item, 'checkIn')}
         >
           <FontAwesome name="key" size={16} color="#52c41a" />
           <Text style={styles.actionText}>Nhận phòng</Text>
-        </TouchableOpacity>
-        <TouchableOpacity 
-          style={styles.actionButton}
+        </Pressable>
+        <Pressable
+          style={({ pressed }) => [styles.actionButton, pressed && styles.pressedItem]}
           onPress={() => handleActionPress(item, 'checkOut')}
         >
           <FontAwesome name="sign-out" size={16} color="#f5222d" />
           <Text style={styles.actionText}>Trả phòng</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
         <View style={styles.filterContainer}>
-          <TouchableOpacity 
-            style={[styles.filterButton, !filter && styles.filterActive]}
+          <Pressable
+            style={({ pressed }) => [
+              styles.filterButton,
+              !filter && styles.activeFilter,
+              pressed && styles.pressedItem
+            ]}
             onPress={() => setFilter(null)}
           >
-            <Text style={[styles.filterText, !filter && styles.filterActiveText]}>Tất cả</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.filterButton, filter === 'vacant' && styles.filterActive]}
-            onPress={() => setFilter('vacant')}
-          >
-            <Text style={[styles.filterText, filter === 'vacant' && styles.filterActiveText]}>Trống</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.filterButton, filter === 'occupied' && styles.filterActive]}
-            onPress={() => setFilter('occupied')}
-          >
-            <Text style={[styles.filterText, filter === 'occupied' && styles.filterActiveText]}>Đã thuê</Text>
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.filterButton, filter === 'cleaning' && styles.filterActive]}
-            onPress={() => setFilter('cleaning')}
-          >
-            <Text style={[styles.filterText, filter === 'cleaning' && styles.filterActiveText]}>Đang dọn</Text>
-          </TouchableOpacity>
+            <Text style={[styles.filterText, !filter && styles.activeFilterText]}>Tất cả</Text>
+          </Pressable>
+          {['vacant', 'occupied', 'cleaning', 'maintenance'].map(status => (
+            <Pressable
+              key={status}
+              style={({ pressed }) => [
+                styles.filterButton,
+                filter === status && styles.activeFilter,
+                pressed && styles.pressedItem
+              ]}
+              onPress={() => setFilter(status)}
+            >
+              <FontAwesome name={getStatusIcon(status) as any} size={12} color={filter === status ? '#fff' : getStatusColor(status)} />
+              <Text style={[styles.filterText, filter === status && styles.activeFilterText]}>{getStatusText(status)}</Text>
+            </Pressable>
+          ))}
         </View>
         
-        <View style={styles.viewToggle}>
-          <TouchableOpacity 
-            style={[styles.viewButton, viewMode === 'list' && styles.viewActive]}
+        <View style={styles.viewModeContainer}>
+          <Pressable
+            style={({ pressed }) => [styles.viewModeButton, viewMode === 'list' && styles.activeViewMode, pressed && styles.pressedItem]}
             onPress={() => setViewMode('list')}
           >
-            <FontAwesome name="list" size={16} color={viewMode === 'list' ? 'white' : '#595959'} />
-          </TouchableOpacity>
-          <TouchableOpacity 
-            style={[styles.viewButton, viewMode === 'grid' && styles.viewActive]}
+            <FontAwesome name="list" size={16} color={viewMode === 'list' ? '#fff' : '#1890ff'} />
+          </Pressable>
+          <Pressable
+            style={({ pressed }) => [styles.viewModeButton, viewMode === 'grid' && styles.activeViewMode, pressed && styles.pressedItem]}
             onPress={() => setViewMode('grid')}
           >
-            <FontAwesome name="th-large" size={16} color={viewMode === 'grid' ? 'white' : '#595959'} />
-          </TouchableOpacity>
+            <FontAwesome name="th-large" size={16} color={viewMode === 'grid' ? '#fff' : '#1890ff'} />
+          </Pressable>
         </View>
       </View>
 
@@ -313,63 +314,35 @@ export default function RoomsScreen() {
         animationType="slide"
         onRequestClose={() => setCheckInModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Nhận Phòng {selectedRoom?.roomNumber}</Text>
-              <TouchableOpacity onPress={() => setCheckInModal(false)}>
-                <FontAwesome name="close" size={20} color="#8c8c8c" />
-              </TouchableOpacity>
-            </View>
-            
-            <ScrollView style={styles.modalContent}>
-              <Text style={styles.inputLabel}>Tên khách hàng:</Text>
-              <TextInput
-                style={styles.input}
-                value={guestInfo.name}
-                onChangeText={(text) => setGuestInfo({...guestInfo, name: text})}
-                placeholder="Nhập tên khách hàng"
-              />
-              
-              <Text style={styles.inputLabel}>Số điện thoại:</Text>
-              <TextInput
-                style={styles.input}
-                value={guestInfo.phone}
-                onChangeText={(text) => setGuestInfo({...guestInfo, phone: text})}
-                placeholder="Nhập số điện thoại"
-                keyboardType="phone-pad"
-              />
-              
-              <Text style={styles.inputLabel}>Số CMND/CCCD:</Text>
-              <TextInput
-                style={styles.input}
-                value={guestInfo.idNumber}
-                onChangeText={(text) => setGuestInfo({...guestInfo, idNumber: text})}
-                placeholder="Nhập số CMND/CCCD"
-              />
-              
-              <View style={styles.roomInfoBox}>
-                <Text style={styles.roomInfoTitle}>Thông tin phòng:</Text>
-                <Text style={styles.roomInfoText}>Loại phòng: {selectedRoom?.type}</Text>
-                <Text style={styles.roomInfoText}>Giá phòng: {selectedRoom?.price.toLocaleString('vi-VN')} VNĐ/đêm</Text>
-                <Text style={styles.roomInfoText}>Tầng: {selectedRoom?.floor}</Text>
-              </View>
-            </ScrollView>
-            
-            <View style={styles.modalFooter}>
-              <TouchableOpacity 
-                style={styles.cancelButton}
-                onPress={() => setCheckInModal(false)}
-              >
-                <Text style={styles.cancelButtonText}>Hủy</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.confirmButton}
-                onPress={handleCheckIn}
-              >
-                <Text style={styles.confirmButtonText}>Xác nhận</Text>
-              </TouchableOpacity>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Nhận phòng {selectedRoom?.roomNumber}</Text>
+            <TextInput 
+              style={styles.input}
+              placeholder="Tên khách hàng"
+              value={guestInfo.name}
+              onChangeText={text => setGuestInfo({...guestInfo, name: text})}
+            />
+            <TextInput 
+              style={styles.input}
+              placeholder="Số điện thoại"
+              value={guestInfo.phone}
+              onChangeText={text => setGuestInfo({...guestInfo, phone: text})}
+              keyboardType="phone-pad"
+            />
+            <TextInput 
+              style={styles.input}
+              placeholder="Số CMND/CCCD"
+              value={guestInfo.idNumber}
+              onChangeText={text => setGuestInfo({...guestInfo, idNumber: text})}
+            />
+            <View style={styles.modalActions}>
+              <Pressable style={({pressed}) => [styles.modalButton, styles.cancelButton, pressed && styles.pressedItem]} onPress={() => setCheckInModal(false)}>
+                <Text style={styles.buttonText}>Hủy</Text>
+              </Pressable>
+              <Pressable style={({pressed}) => [styles.modalButton, styles.confirmButton, pressed && styles.pressedItem]} onPress={handleCheckIn}>
+                <Text style={styles.buttonText}>Xác nhận</Text>
+              </Pressable>
             </View>
           </View>
         </View>
@@ -382,95 +355,36 @@ export default function RoomsScreen() {
         animationType="slide"
         onRequestClose={() => setCheckOutModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContainer}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Trả Phòng {selectedRoom?.roomNumber}</Text>
-              <TouchableOpacity onPress={() => setCheckOutModal(false)}>
-                <FontAwesome name="close" size={20} color="#8c8c8c" />
-              </TouchableOpacity>
-            </View>
-            
-            <ScrollView style={styles.modalContent}>
-              <Text style={styles.inputLabel}>Tổng tiền:</Text>
-              <TextInput
-                style={styles.input}
-                value={checkOutInfo.totalAmount.toString()}
-                onChangeText={(text) => setCheckOutInfo({...checkOutInfo, totalAmount: parseInt(text) || 0})}
-                placeholder="Nhập tổng tiền"
-                keyboardType="number-pad"
-              />
-              
-              <Text style={styles.inputLabel}>Phương thức thanh toán:</Text>
-              <View style={styles.paymentOptions}>
-                <TouchableOpacity 
-                  style={[
-                    styles.paymentButton, 
-                    checkOutInfo.paymentMethod === 'cash' && styles.paymentButtonActive
-                  ]}
-                  onPress={() => setCheckOutInfo({...checkOutInfo, paymentMethod: 'cash'})}
-                >
-                  <FontAwesome name="money" size={16} color={checkOutInfo.paymentMethod === 'cash' ? 'white' : '#595959'} />
-                  <Text style={[
-                    styles.paymentButtonText,
-                    checkOutInfo.paymentMethod === 'cash' && styles.paymentButtonTextActive
-                  ]}>Tiền mặt</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[
-                    styles.paymentButton, 
-                    checkOutInfo.paymentMethod === 'card' && styles.paymentButtonActive
-                  ]}
-                  onPress={() => setCheckOutInfo({...checkOutInfo, paymentMethod: 'card'})}
-                >
-                  <FontAwesome name="credit-card" size={16} color={checkOutInfo.paymentMethod === 'card' ? 'white' : '#595959'} />
-                  <Text style={[
-                    styles.paymentButtonText,
-                    checkOutInfo.paymentMethod === 'card' && styles.paymentButtonTextActive
-                  ]}>Thẻ</Text>
-                </TouchableOpacity>
-                
-                <TouchableOpacity 
-                  style={[
-                    styles.paymentButton, 
-                    checkOutInfo.paymentMethod === 'transfer' && styles.paymentButtonActive
-                  ]}
-                  onPress={() => setCheckOutInfo({...checkOutInfo, paymentMethod: 'transfer'})}
-                >
-                  <FontAwesome name="bank" size={16} color={checkOutInfo.paymentMethod === 'transfer' ? 'white' : '#595959'} />
-                  <Text style={[
-                    styles.paymentButtonText,
-                    checkOutInfo.paymentMethod === 'transfer' && styles.paymentButtonTextActive
-                  ]}>Chuyển khoản</Text>
-                </TouchableOpacity>
-              </View>
-              
-              <Text style={styles.inputLabel}>Ghi chú:</Text>
-              <TextInput
-                style={[styles.input, styles.textArea]}
-                value={checkOutInfo.notes}
-                onChangeText={(text) => setCheckOutInfo({...checkOutInfo, notes: text})}
-                placeholder="Nhập ghi chú"
-                multiline={true}
-                numberOfLines={4}
-              />
-            </ScrollView>
-            
-            <View style={styles.modalFooter}>
-              <TouchableOpacity 
-                style={styles.cancelButton}
-                onPress={() => setCheckOutModal(false)}
-              >
-                <Text style={styles.cancelButtonText}>Hủy</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.confirmButton}
-                onPress={handleCheckOut}
-              >
-                <Text style={styles.confirmButtonText}>Xác nhận</Text>
-              </TouchableOpacity>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Trả phòng {selectedRoom?.roomNumber}</Text>
+            <TextInput 
+              style={styles.input}
+              placeholder="Tổng tiền thanh toán"
+              value={checkOutInfo.totalAmount.toString()}
+              onChangeText={text => setCheckOutInfo({...checkOutInfo, totalAmount: parseFloat(text) || 0})}
+              keyboardType="numeric"
+            />
+            <TextInput 
+              style={styles.input}
+              placeholder="Phương thức thanh toán (cash/card)"
+              value={checkOutInfo.paymentMethod}
+              onChangeText={text => setCheckOutInfo({...checkOutInfo, paymentMethod: text})}
+            />
+            <TextInput 
+              style={[styles.input, styles.notesInput]}
+              placeholder="Ghi chú (nếu có)"
+              value={checkOutInfo.notes}
+              onChangeText={text => setCheckOutInfo({...checkOutInfo, notes: text})}
+              multiline
+            />
+            <View style={styles.modalActions}>
+              <Pressable style={({pressed}) => [styles.modalButton, styles.cancelButton, pressed && styles.pressedItem]} onPress={() => setCheckOutModal(false)}>
+                <Text style={styles.buttonText}>Hủy</Text>
+              </Pressable>
+              <Pressable style={({pressed}) => [styles.modalButton, styles.confirmButton, pressed && styles.pressedItem]} onPress={handleCheckOut}>
+                <Text style={styles.buttonText}>Xác nhận</Text>
+              </Pressable>
             </View>
           </View>
         </View>
@@ -483,63 +397,28 @@ export default function RoomsScreen() {
         animationType="slide"
         onRequestClose={() => setStatusModal(false)}
       >
-        <View style={styles.modalOverlay}>
-          <View style={[styles.modalContainer, styles.statusModalContainer]}>
-            <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Cập Nhật Trạng Thái Phòng {selectedRoom?.roomNumber}</Text>
-              <TouchableOpacity onPress={() => setStatusModal(false)}>
-                <FontAwesome name="close" size={20} color="#8c8c8c" />
-              </TouchableOpacity>
+        <View style={styles.modalContainer}>
+          <View style={styles.modalContent}>
+            <Text style={styles.modalTitle}>Cập nhật trạng thái phòng {selectedRoom?.roomNumber}</Text>
+            <View style={styles.statusOptionsContainer}>
+              {['vacant', 'occupied', 'cleaning', 'maintenance'].map(status => (
+                <Pressable
+                  key={status}
+                  style={({pressed}) => [
+                    styles.statusOptionButton,
+                    { backgroundColor: getStatusColor(status) }, 
+                    pressed && styles.pressedItem
+                  ]}
+                  onPress={() => handleUpdateStatus(status as any)}
+                >
+                  <FontAwesome name={getStatusIcon(status) as any} size={16} color="#fff" />
+                  <Text style={styles.statusOptionText}>{getStatusText(status)}</Text>
+                </Pressable>
+              ))}
             </View>
-            
-            <View style={styles.statusOptions}>
-              <TouchableOpacity 
-                style={styles.statusOption}
-                onPress={() => handleUpdateStatus('vacant')}
-              >
-                <View style={[styles.statusIcon, { backgroundColor: getStatusColor('vacant') }]}>
-                  <FontAwesome name="check-circle" size={20} color="white" />
-                </View>
-                <Text style={styles.statusOptionText}>Phòng trống</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.statusOption}
-                onPress={() => handleUpdateStatus('occupied')}
-              >
-                <View style={[styles.statusIcon, { backgroundColor: getStatusColor('occupied') }]}>
-                  <FontAwesome name="user" size={20} color="white" />
-                </View>
-                <Text style={styles.statusOptionText}>Đã thuê</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.statusOption}
-                onPress={() => handleUpdateStatus('cleaning')}
-              >
-                <View style={[styles.statusIcon, { backgroundColor: getStatusColor('cleaning') }]}>
-                  <FontAwesome name="refresh" size={20} color="white" />
-                </View>
-                <Text style={styles.statusOptionText}>Đang dọn</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity 
-                style={styles.statusOption}
-                onPress={() => handleUpdateStatus('maintenance')}
-              >
-                <View style={[styles.statusIcon, { backgroundColor: getStatusColor('maintenance') }]}>
-                  <FontAwesome name="wrench" size={20} color="white" />
-                </View>
-                <Text style={styles.statusOptionText}>Bảo trì</Text>
-              </TouchableOpacity>
-            </View>
-            
-            <TouchableOpacity 
-              style={styles.cancelButton}
-              onPress={() => setStatusModal(false)}
-            >
-              <Text style={styles.cancelButtonText}>Hủy</Text>
-            </TouchableOpacity>
+            <Pressable style={({pressed}) => [styles.modalButton, styles.cancelButton, {marginTop: 10}, pressed && styles.pressedItem]} onPress={() => setStatusModal(false)}>
+              <Text style={styles.buttonText}>Hủy</Text>
+            </Pressable>
           </View>
         </View>
       </Modal>
@@ -550,66 +429,63 @@ export default function RoomsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f0f2f5',
   },
   header: {
     flexDirection: 'row',
-    backgroundColor: 'white',
+    backgroundColor: '#fff',
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
     shadowOpacity: 0.1,
     shadowRadius: 2,
-    elevation: 2,
+    elevation: 3,
     justifyContent: 'space-between',
     alignItems: 'center',
   },
   filterContainer: {
     flexDirection: 'row',
-    padding: 10,
+    paddingVertical: 8,
+    paddingHorizontal: 5,
+    flexWrap: 'wrap',
     flex: 1,
   },
   filterButton: {
-    paddingHorizontal: 12,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 10,
     paddingVertical: 6,
-    marginHorizontal: 4,
-    borderRadius: 16,
-    backgroundColor: '#f0f0f0',
+    borderRadius: 15,
+    borderWidth: 1,
+    borderColor: '#d9d9d9',
+    margin: 3,
+    backgroundColor: '#fff',
   },
-  filterActive: {
+  activeFilter: {
     backgroundColor: '#1890ff',
+    borderColor: '#1890ff',
   },
   filterText: {
-    fontSize: 14,
+    fontSize: 12,
+    marginLeft: 5,
     color: '#595959',
   },
-  filterActiveText: {
+  activeFilterText: {
     color: 'white',
   },
-  viewToggle: {
+  viewModeContainer: {
     flexDirection: 'row',
-    padding: 10,
-  },
-  viewButton: {
-    width: 36,
-    height: 36,
-    justifyContent: 'center',
     alignItems: 'center',
-    borderRadius: 18,
-    marginHorizontal: 4,
-    backgroundColor: '#f0f0f0',
+    paddingHorizontal: 10,
   },
-  viewActive: {
+  viewModeButton: {
+    padding: 8,
+    borderRadius: 4,
+    marginLeft: 5,
+    borderWidth: 1,
+    borderColor: '#1890ff',
+  },
+  activeViewMode: {
     backgroundColor: '#1890ff',
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 10,
-    fontSize: 16,
-    color: '#8c8c8c',
   },
   listContent: {
     padding: 10,
@@ -624,14 +500,14 @@ const styles = StyleSheet.create({
     marginBottom: 10,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.1,
+    shadowOpacity: 0.05,
     shadowRadius: 2,
     elevation: 2,
-    flex: 1,
   },
   roomCardGrid: {
-    marginHorizontal: 5,
-    width: '48%',
+    flex: 1,
+    margin: 5,
+    maxWidth: '48%', // Adjust for 2 columns
   },
   roomHeader: {
     flexDirection: 'row',
@@ -642,200 +518,154 @@ const styles = StyleSheet.create({
   roomNumber: {
     fontSize: 18,
     fontWeight: 'bold',
+    color: '#262626',
   },
   statusBadge: {
     flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 4,
+    borderRadius: 12,
   },
   statusText: {
-    color: 'white',
     fontSize: 12,
-    marginLeft: 4,
+    color: 'white',
+    marginLeft: 5,
+    fontWeight: '500',
   },
   roomDetails: {
     marginBottom: 10,
   },
   roomType: {
-    fontSize: 16,
-    color: '#262626',
+    fontSize: 14,
+    color: '#595959',
+    marginBottom: 3,
   },
   roomPrice: {
     fontSize: 14,
-    color: '#1890ff',
+    color: '#262626',
     fontWeight: 'bold',
-    marginTop: 2,
+    marginBottom: 3,
   },
   roomFloor: {
-    fontSize: 14,
+    fontSize: 12,
     color: '#8c8c8c',
-    marginTop: 2,
   },
   roomActions: {
     flexDirection: 'row',
+    justifyContent: 'space-around',
     borderTopWidth: 1,
     borderTopColor: '#f0f0f0',
     paddingTop: 10,
+    marginTop: 5,
   },
   actionButton: {
-    flex: 1,
     flexDirection: 'row',
-    justifyContent: 'center',
     alignItems: 'center',
-    paddingVertical: 6,
+    paddingVertical: 5,
+    paddingHorizontal: 10,
+    borderRadius: 4,
   },
   actionText: {
+    fontSize: 12,
     marginLeft: 5,
-    fontSize: 14,
+    color: '#595959',
   },
-  modalOverlay: {
+  loadingContainer: {
     flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
     justifyContent: 'center',
     alignItems: 'center',
+    backgroundColor: '#f0f2f5',
+  },
+  loadingText: {
+    marginTop: 10,
+    fontSize: 16,
+    color: '#8c8c8c',
   },
   modalContainer: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  modalContent: {
     backgroundColor: 'white',
     borderRadius: 8,
-    width: '90%',
+    padding: 20,
+    width: '100%',
     maxHeight: '80%',
-    elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
-    shadowRadius: 4,
-  },
-  statusModalContainer: {
-    maxHeight: '60%',
-  },
-  modalHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
+    shadowRadius: 5,
+    elevation: 5,
   },
   modalTitle: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#262626',
-  },
-  modalContent: {
-    padding: 15,
-  },
-  modalFooter: {
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    padding: 15,
-    borderTopWidth: 1,
-    borderTopColor: '#f0f0f0',
-  },
-  inputLabel: {
-    fontSize: 14,
-    color: '#8c8c8c',
-    marginBottom: 5,
+    marginBottom: 15,
+    textAlign: 'center',
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#d9d9d9',
+    backgroundColor: '#f5f5f5',
     borderRadius: 4,
-    padding: 10,
-    marginBottom: 15,
-    fontSize: 16,
+    padding: 12,
+    fontSize: 14,
+    marginBottom: 10,
+    borderWidth: 1,
+    borderColor: '#e0e0e0',
   },
-  textArea: {
-    height: 100,
+  notesInput: {
+    height: 80,
     textAlignVertical: 'top',
   },
-  roomInfoBox: {
-    backgroundColor: '#f5f5f5',
-    padding: 10,
-    borderRadius: 4,
-    marginBottom: 15,
-  },
-  roomInfoTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 5,
-  },
-  roomInfoText: {
-    fontSize: 14,
-    color: '#262626',
-    marginBottom: 3,
-  },
-  paymentOptions: {
+  modalActions: {
     flexDirection: 'row',
     justifyContent: 'space-between',
-    marginBottom: 15,
+    marginTop: 15,
   },
-  paymentButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: 10,
-    borderWidth: 1,
-    borderColor: '#d9d9d9',
-    borderRadius: 4,
+  modalButton: {
     flex: 1,
-    marginHorizontal: 4,
-  },
-  paymentButtonActive: {
-    backgroundColor: '#1890ff',
-    borderColor: '#1890ff',
-  },
-  paymentButtonText: {
-    fontSize: 14,
-    color: '#595959',
-    marginLeft: 5,
-  },
-  paymentButtonTextActive: {
-    color: 'white',
-  },
-  cancelButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    borderWidth: 1,
-    borderColor: '#d9d9d9',
+    paddingVertical: 12,
     borderRadius: 4,
-    marginRight: 10,
+    alignItems: 'center',
+    marginHorizontal: 5,
   },
-  cancelButtonText: {
-    color: '#595959',
-    fontSize: 16,
+  buttonText: {
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
   },
   confirmButton: {
-    paddingVertical: 10,
-    paddingHorizontal: 20,
-    backgroundColor: '#1890ff',
-    borderRadius: 4,
+    backgroundColor: '#52c41a',
   },
-  confirmButtonText: {
-    color: 'white',
-    fontSize: 16,
+  cancelButton: {
+    backgroundColor: '#f5222d',
   },
-  statusOptions: {
-    padding: 15,
+  statusOptionsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-around',
+    marginBottom: 10,
   },
-  statusOption: {
+  statusOptionButton: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingVertical: 12,
-    borderBottomWidth: 1,
-    borderBottomColor: '#f0f0f0',
-  },
-  statusIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+    padding: 10,
+    borderRadius: 4,
+    margin: 5,
+    minWidth: '45%',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginRight: 10,
   },
   statusOptionText: {
-    fontSize: 16,
-    color: '#262626',
+    color: 'white',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 8,
+  },
+  pressedItem: {
+    opacity: 0.7,
   },
 }); 

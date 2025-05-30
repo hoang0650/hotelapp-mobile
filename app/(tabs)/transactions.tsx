@@ -1,17 +1,17 @@
-import React, { useState, useEffect } from 'react';
-import { 
-  StyleSheet, 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  FlatList, 
-  TextInput, 
-  Modal,
-  ActivityIndicator,
-  ScrollView,
-  RefreshControl
-} from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
+import React, { useEffect, useState } from 'react';
+import {
+    ActivityIndicator,
+    FlatList,
+    Modal,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
+} from 'react-native';
 
 // Định nghĩa kiểu dữ liệu giao dịch
 interface Transaction {
@@ -236,8 +236,11 @@ export default function TransactionsScreen() {
     const bankInfo = getBankInfo(item.bank);
     
     return (
-      <TouchableOpacity 
-        style={styles.transactionCard}
+      <Pressable
+        style={({ pressed }) => [
+          styles.transactionCard,
+          pressed && styles.pressedItem
+        ]}
         onPress={() => handleTransactionPress(item)}
       >
         <View style={styles.transactionHeader}>
@@ -267,7 +270,7 @@ export default function TransactionsScreen() {
             <Text style={styles.statusText}>{getStatusText(item.status)}</Text>
           </View>
         </View>
-      </TouchableOpacity>
+      </Pressable>
     );
   };
 
@@ -315,14 +318,15 @@ export default function TransactionsScreen() {
           <FontAwesome name="search" size={16} color="#bfbfbf" style={styles.searchIcon} />
           <TextInput
             style={styles.searchInput}
-            placeholder="Tìm kiếm giao dịch..."
+            placeholder="Tìm kiếm theo tên, SĐT, phòng..."
             value={searchQuery}
             onChangeText={setSearchQuery}
+            placeholderTextColor="#888"
           />
           {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
-              <FontAwesome name="times-circle" size={16} color="#bfbfbf" />
-            </TouchableOpacity>
+            <Pressable onPress={() => setSearchQuery('')} style={({pressed}) => [styles.clearButton, pressed && styles.pressedItem]}>
+              <FontAwesome name="times-circle" size={20} color="#888" />
+            </Pressable>
           )}
         </View>
       </View>
@@ -330,60 +334,43 @@ export default function TransactionsScreen() {
       {/* Bộ lọc */}
       <View style={styles.filterContainer}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <TouchableOpacity 
-            style={[styles.filterButton, filterStatus === 'all' && styles.filterActive]}
+          <Pressable
+            style={({pressed}) => [styles.filterButton, filterStatus === 'all' && styles.activeFilter, pressed && styles.pressedItem]}
             onPress={() => setFilterStatus('all')}
           >
-            <Text style={[styles.filterText, filterStatus === 'all' && styles.filterActiveText]}>
-              Tất cả
-            </Text>
-          </TouchableOpacity>
+            <Text style={[styles.filterText, filterStatus === 'all' && styles.activeFilterText]}>Tất cả</Text>
+          </Pressable>
           
-          <TouchableOpacity 
-            style={[styles.filterButton, filterStatus === 'pending' && styles.filterActive]}
+          <Pressable
+            style={({pressed}) => [styles.filterButton, filterStatus === 'pending' && styles.activeFilter, pressed && styles.pressedItem]}
             onPress={() => setFilterStatus('pending')}
           >
-            <Text style={[styles.filterText, filterStatus === 'pending' && styles.filterActiveText]}>
-              Chờ xác nhận
-            </Text>
-          </TouchableOpacity>
+            <Text style={[styles.filterText, filterStatus === 'pending' && styles.activeFilterText]}>Chờ xử lý</Text>
+          </Pressable>
           
-          <TouchableOpacity 
-            style={[styles.filterButton, filterStatus === 'confirmed' && styles.filterActive]}
+          <Pressable
+            style={({pressed}) => [styles.filterButton, filterStatus === 'confirmed' && styles.activeFilter, pressed && styles.pressedItem]}
             onPress={() => setFilterStatus('confirmed')}
           >
-            <Text style={[styles.filterText, filterStatus === 'confirmed' && styles.filterActiveText]}>
-              Đã xác nhận
-            </Text>
-          </TouchableOpacity>
+            <Text style={[styles.filterText, filterStatus === 'confirmed' && styles.activeFilterText]}>Đã xác nhận</Text>
+          </Pressable>
           
-          <TouchableOpacity 
-            style={[styles.filterButton, filterStatus === 'rejected' && styles.filterActive]}
+          <Pressable
+            style={({pressed}) => [styles.filterButton, filterStatus === 'rejected' && styles.activeFilter, pressed && styles.pressedItem]}
             onPress={() => setFilterStatus('rejected')}
           >
-            <Text style={[styles.filterText, filterStatus === 'rejected' && styles.filterActiveText]}>
-              Từ chối
-            </Text>
-          </TouchableOpacity>
+            <Text style={[styles.filterText, filterStatus === 'rejected' && styles.activeFilterText]}>Bị từ chối</Text>
+          </Pressable>
           
-          <TouchableOpacity 
-            style={[styles.filterButton, filterBank !== null && styles.filterActive, styles.bankFilterButton]}
+          <Pressable
+            style={({pressed}) => [styles.filterButton, styles.bankFilterButton, pressed && styles.pressedItem]}
             onPress={() => setBankSelectionModalVisible(true)}
           >
-            {filterBank ? (
-              <Text style={[styles.filterText, styles.filterActiveText]}>
-                {getBankInfo(filterBank).name}
-              </Text>
-            ) : (
-              <Text style={styles.filterText}>Chọn ngân hàng</Text>
-            )}
-            <FontAwesome 
-              name="chevron-down" 
-              size={12} 
-              color={filterBank ? "#fff" : "#8c8c8c"} 
-              style={styles.bankFilterIcon} 
-            />
-          </TouchableOpacity>
+            <FontAwesome name="bank" size={16} color={filterBank ? '#1890ff' : '#555'} />
+            <Text style={[styles.filterText, filterBank && styles.activeBankFilterText, { marginLeft: 5 }]}>
+              {filterBank ? getBankInfo(filterBank).name : 'Ngân hàng'}
+            </Text>
+          </Pressable>
         </ScrollView>
       </View>
 
@@ -423,9 +410,9 @@ export default function TransactionsScreen() {
             <View style={styles.modalContainer}>
               <View style={styles.modalHeader}>
                 <Text style={styles.modalTitle}>Chi tiết giao dịch</Text>
-                <TouchableOpacity onPress={() => setDetailsModalVisible(false)}>
-                  <FontAwesome name="close" size={20} color="#8c8c8c" />
-                </TouchableOpacity>
+                <Pressable onPress={() => setDetailsModalVisible(false)} style={({pressed}) => pressed && styles.pressedItem}>
+                  <FontAwesome name="times" size={24} color="#888" />
+                </Pressable>
               </View>
               
               <ScrollView style={styles.modalContent}>
@@ -500,17 +487,17 @@ export default function TransactionsScreen() {
               <View style={styles.modalFooter}>
                 {selectedTransaction.status === 'pending' && (
                   <>
-                    <TouchableOpacity 
-                      style={styles.updateButton}
+                    <Pressable
+                      style={({pressed}) => [styles.updateButton, pressed && styles.pressedItem]}
                       onPress={() => checkBankAPI(selectedTransaction)}
                     >
                       <FontAwesome name="refresh" size={16} color="#fff" style={styles.buttonIcon} />
                       <Text style={styles.updateButtonText}>Kiểm tra với ngân hàng</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                     
                     <View style={styles.actionButtonGroup}>
-                      <TouchableOpacity 
-                        style={[styles.actionButton, styles.confirmButton]}
+                      <Pressable
+                        style={({pressed}) => [styles.actionButton, styles.confirmButton, pressed && styles.pressedItem]}
                         onPress={() => {
                           updateTransactionStatus(selectedTransaction.id, 'confirmed');
                           setDetailsModalVisible(false);
@@ -518,10 +505,10 @@ export default function TransactionsScreen() {
                       >
                         <FontAwesome name="check" size={16} color="#fff" />
                         <Text style={styles.actionButtonText}>Xác nhận</Text>
-                      </TouchableOpacity>
+                      </Pressable>
                       
-                      <TouchableOpacity 
-                        style={[styles.actionButton, styles.rejectButton]}
+                      <Pressable
+                        style={({pressed}) => [styles.actionButton, styles.rejectButton, pressed && styles.pressedItem]}
                         onPress={() => {
                           updateTransactionStatus(selectedTransaction.id, 'rejected');
                           setDetailsModalVisible(false);
@@ -529,17 +516,17 @@ export default function TransactionsScreen() {
                       >
                         <FontAwesome name="times" size={16} color="#fff" />
                         <Text style={styles.actionButtonText}>Từ chối</Text>
-                      </TouchableOpacity>
+                      </Pressable>
                     </View>
                   </>
                 )}
                 
-                <TouchableOpacity 
-                  style={styles.closeButton}
+                <Pressable
+                  style={({pressed}) => [styles.closeButton, pressed && styles.pressedItem]}
                   onPress={() => setDetailsModalVisible(false)}
                 >
                   <Text style={styles.closeButtonText}>Đóng</Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </View>
           </View>
@@ -557,26 +544,26 @@ export default function TransactionsScreen() {
           <View style={[styles.modalContainer, styles.bankSelectionModal]}>
             <View style={styles.modalHeader}>
               <Text style={styles.modalTitle}>Chọn ngân hàng</Text>
-              <TouchableOpacity onPress={() => setBankSelectionModalVisible(false)}>
-                <FontAwesome name="close" size={20} color="#8c8c8c" />
-              </TouchableOpacity>
+              <Pressable onPress={() => setBankSelectionModalVisible(false)} style={({pressed}) => pressed && styles.pressedItem}>
+                <FontAwesome name="times" size={24} color="#888" />
+              </Pressable>
             </View>
             
             <ScrollView style={styles.bankList}>
-              <TouchableOpacity 
-                style={styles.bankItem}
+              <Pressable
+                style={({pressed}) => [styles.bankItem, filterBank === null && styles.activeBankSelectItem, pressed && styles.pressedItem]}
                 onPress={() => {
                   setFilterBank(null);
                   setBankSelectionModalVisible(false);
                 }}
               >
                 <Text style={styles.bankItemText}>Tất cả ngân hàng</Text>
-              </TouchableOpacity>
+              </Pressable>
               
               {SUPPORTED_BANKS.map(bank => (
-                <TouchableOpacity 
+                <Pressable
                   key={bank.id}
-                  style={styles.bankItem}
+                  style={({pressed}) => [styles.bankItem, filterBank === bank.id && styles.activeBankSelectItem, pressed && styles.pressedItem]}
                   onPress={() => {
                     setFilterBank(bank.id);
                     setBankSelectionModalVisible(false);
@@ -589,9 +576,21 @@ export default function TransactionsScreen() {
                   {filterBank === bank.id && (
                     <FontAwesome name="check" size={16} color="#52c41a" />
                   )}
-                </TouchableOpacity>
+                </Pressable>
               ))}
             </ScrollView>
+            {filterBank && (
+              <Pressable
+                style={({pressed}) => [styles.modalButton, styles.clearBankFilterButton, pressed && styles.pressedItem]}
+                onPress={() => {
+                  setFilterBank(null);
+                  setBankSelectionModalVisible(false);
+                }}
+              >
+                <FontAwesome name="trash-o" size={18} color="white" style={styles.buttonIcon} />
+                <Text style={styles.modalButtonText}>Bỏ chọn ngân hàng</Text>
+              </Pressable>
+            )}
           </View>
         </View>
       </Modal>
@@ -645,13 +644,13 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#f0f0f0',
   },
-  filterActive: {
-    backgroundColor: '#1890ff',
-    borderColor: '#1890ff',
-  },
   filterText: {
     color: '#595959',
     fontSize: 14,
+  },
+  filterActive: {
+    backgroundColor: '#1890ff',
+    borderColor: '#1890ff',
   },
   filterActiveText: {
     color: '#fff',
@@ -950,5 +949,51 @@ const styles = StyleSheet.create({
   bankItemText: {
     fontSize: 16,
     color: '#262626',
+  },
+  pressedItem: {
+    opacity: 0.7,
+  },
+  activeFilter: {
+    backgroundColor: '#1890ff',
+    borderColor: '#1890ff',
+  },
+  activeFilterText: {
+    color: '#fff',
+  },
+  activeBankFilterText: {
+    color: '#fff',
+  },
+  activeBankSelectItem: {
+    backgroundColor: '#e6f7ff',
+    borderColor: '#91d5ff',
+  },
+  modalActions: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: 10,
+  },
+  modalButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 4,
+    padding: 10,
+    flex: 1,
+    marginHorizontal: 4,
+  },
+  checkApiButton: {
+    backgroundColor: '#1890ff',
+  },
+  modalLoading: {
+    marginTop: 10,
+  },
+  clearBankFilterButton: {
+    backgroundColor: '#f5222d',
+  },
+  modalButtonText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginLeft: 6,
   },
 }); 

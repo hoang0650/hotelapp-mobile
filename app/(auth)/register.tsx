@@ -1,7 +1,7 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { selectAuthError, selectAuthStatus, selectIsAuthenticated, selectIsTwoFactorRequired, selectTwoFactorUserId } from '../../store/selectors/authSelectors';
 import { clearAuthError } from '../../store/slices/authSlice';
@@ -23,7 +23,7 @@ export default function RegisterScreen() {
   
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/profile');
       return;
     }
 
@@ -100,12 +100,15 @@ export default function RegisterScreen() {
               value={password}
               onChangeText={setPassword}
             />
-            <TouchableOpacity 
-              style={styles.eyeIcon}
+            <Pressable
+              style={({ pressed }) => [
+                styles.eyeIcon,
+                pressed && styles.pressedItem
+              ]}
               onPress={() => setShowPassword(!showPassword)}
             >
               <FontAwesome name={showPassword ? 'eye-slash' : 'eye'} size={20} color="#bfbfbf" />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           <View style={styles.inputContainer}>
@@ -117,16 +120,23 @@ export default function RegisterScreen() {
               value={confirmPassword}
               onChangeText={setConfirmPassword}
             />
-            <TouchableOpacity 
-              style={styles.eyeIcon}
+            <Pressable
+              style={({ pressed }) => [
+                styles.eyeIcon,
+                pressed && styles.pressedItem
+              ]}
               onPress={() => setShowConfirmPassword(!showConfirmPassword)}
             >
               <FontAwesome name={showConfirmPassword ? 'eye-slash' : 'eye'} size={20} color="#bfbfbf" />
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
-          <TouchableOpacity 
-            style={[styles.actionButton, isLoading && styles.actionButtonDisabled]}
+          <Pressable
+            style={({ pressed }) => [
+              styles.actionButton,
+              isLoading && styles.actionButtonDisabled,
+              pressed && styles.pressedItem
+            ]}
             onPress={handleRegister}
             disabled={isLoading}
           >
@@ -135,13 +145,13 @@ export default function RegisterScreen() {
             ) : (
               <Text style={styles.actionButtonText}>Đăng ký</Text>
             )}
-          </TouchableOpacity>
+          </Pressable>
           
           <View style={styles.loginContainer}>
             <Text style={styles.loginText}>Đã có tài khoản? </Text>
-            <TouchableOpacity onPress={() => router.push('/login')}>
+            <Pressable onPress={() => router.push('/login')} style={({pressed}) => pressed && styles.pressedItem}>
               <Text style={styles.loginLink}>Đăng nhập ngay</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
         </View>
 
@@ -251,6 +261,7 @@ const styles = StyleSheet.create({
   loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
+    alignItems: 'center',
     marginTop: 20,
   },
   loginText: {
@@ -261,13 +272,17 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#1890ff',
     fontWeight: 'bold',
+    marginLeft: 5,
   },
   footer: {
-    marginTop: 40,
+    paddingVertical: 20, 
     alignItems: 'center',
   },
   footerText: {
-    color: '#999',
     fontSize: 12,
+    color: '#999',
   },
+  pressedItem: {
+    opacity: 0.7,
+  }
 }); 

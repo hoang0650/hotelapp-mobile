@@ -1,7 +1,7 @@
 import { FontAwesome } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAppSelector } from '../../store';
 import { selectIsAuthenticated } from '../../store/selectors/authSelectors';
 
@@ -14,7 +14,7 @@ export default function ForgotPasswordScreen() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/profile');
     }
   }, [isAuthenticated]);
 
@@ -76,8 +76,12 @@ export default function ForgotPasswordScreen() {
                 />
               </View>
 
-              <TouchableOpacity 
-                style={[styles.resetButton, isLoading && styles.resetButtonDisabled]}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.resetButton,
+                  isLoading && styles.resetButtonDisabled,
+                  pressed && styles.pressedItem
+                ]}
                 onPress={handleSendResetLink}
                 disabled={isLoading}
               >
@@ -89,7 +93,7 @@ export default function ForgotPasswordScreen() {
                 ) : (
                   <Text style={styles.resetButtonText}>Gửi liên kết đặt lại</Text>
                 )}
-              </TouchableOpacity>
+              </Pressable>
             </>
           ) : (
             <View style={styles.successContainer}>
@@ -100,20 +104,23 @@ export default function ForgotPasswordScreen() {
               <Text style={styles.successText}>
                 Chúng tôi đã gửi hướng dẫn đặt lại mật khẩu đến email của bạn. Vui lòng kiểm tra hộp thư (bao gồm cả thư rác).
               </Text>
-              <TouchableOpacity 
-                style={styles.resetPasswordButton}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.resetPasswordButton,
+                  pressed && styles.pressedItem
+                ]}
                 onPress={() => router.push('/reset-password')}
               >
                 <Text style={styles.resetButtonText}>Đặt lại mật khẩu</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           )}
 
           <View style={styles.linkContainer}>
             <Link href="/login" asChild>
-              <TouchableOpacity>
+              <Pressable style={({pressed}) => pressed && styles.pressedItem}>
                 <Text style={styles.link}>Quay lại đăng nhập</Text>
-              </TouchableOpacity>
+              </Pressable>
             </Link>
           </View>
         </View>
@@ -272,4 +279,7 @@ const styles = StyleSheet.create({
     color: '#999',
     fontSize: 12,
   },
+  pressedItem: {
+    opacity: 0.7,
+  }
 }); 

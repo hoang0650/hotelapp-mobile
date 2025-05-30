@@ -1,7 +1,6 @@
-import { useState, useCallback } from 'react';
-import { StyleSheet, ScrollView, View, Text, Image, TouchableOpacity, TextInput, FlatList, Modal, SafeAreaView, Dimensions } from 'react-native';
 import { FontAwesome } from '@expo/vector-icons';
-import { router } from 'expo-router';
+import { useCallback, useState } from 'react';
+import { Dimensions, FlatList, Image, Modal, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 
 interface Service {
   id: string;
@@ -135,8 +134,8 @@ export default function ServicesScreen() {
   };
 
   const renderServiceItem = ({ item }: { item: Service }) => (
-    <TouchableOpacity 
-      style={styles.serviceCard}
+    <Pressable
+      style={({ pressed }) => [styles.serviceCard, pressed && styles.pressedItem]}
       onPress={() => openServiceDetail(item)}
     >
       <Image
@@ -154,14 +153,14 @@ export default function ServicesScreen() {
         >
           {item.description}
         </Text>
-        <TouchableOpacity 
-          style={styles.orderButton}
+        <Pressable
+          style={({ pressed }) => [styles.orderButton, pressed && styles.pressedItem]}
           onPress={() => handleOrderService(item)}
         >
           <Text style={styles.orderButtonText}>Đặt dịch vụ</Text>
-        </TouchableOpacity>
+        </Pressable>
       </View>
-    </TouchableOpacity>
+    </Pressable>
   );
 
   return (
@@ -175,9 +174,9 @@ export default function ServicesScreen() {
           onChangeText={setSearchText}
         />
         {searchText !== '' && (
-          <TouchableOpacity onPress={() => setSearchText('')}>
+          <Pressable onPress={() => setSearchText('')} style={({pressed}) => pressed && styles.pressedItem}>
             <FontAwesome name="times-circle" size={16} color="#8c8c8c" />
-          </TouchableOpacity>
+          </Pressable>
         )}
       </View>
 
@@ -187,11 +186,12 @@ export default function ServicesScreen() {
         contentContainerStyle={styles.categoriesContainer}
       >
         {categories.map(category => (
-          <TouchableOpacity
+          <Pressable
             key={category.id}
-            style={[
+            style={({ pressed }) => [
               styles.categoryButton,
-              selectedCategory === category.id && styles.selectedCategory
+              selectedCategory === category.id && styles.selectedCategory,
+              pressed && styles.pressedItem
             ]}
             onPress={() => setSelectedCategory(category.id === 'all' ? null : category.id)}
           >
@@ -208,7 +208,7 @@ export default function ServicesScreen() {
             >
               {category.name}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         ))}
       </ScrollView>
 
@@ -229,12 +229,12 @@ export default function ServicesScreen() {
         {selectedService && (
           <View style={styles.modalContainer}>
             <View style={styles.modalContent}>
-              <TouchableOpacity 
-                style={styles.closeButton}
+              <Pressable
+                style={({ pressed }) => [styles.closeButton, pressed && styles.pressedItem]}
                 onPress={() => setModalVisible(false)}
               >
                 <FontAwesome name="close" size={20} color="#333" />
-              </TouchableOpacity>
+              </Pressable>
 
               <Image
                 source={{ uri: selectedService.image }}
@@ -269,12 +269,22 @@ export default function ServicesScreen() {
               <Text style={styles.modalDescriptionTitle}>Mô tả dịch vụ</Text>
               <Text style={styles.modalDescription}>{selectedService.description}</Text>
 
-              <TouchableOpacity 
-                style={styles.modalOrderButton}
-                onPress={() => handleOrderService(selectedService)}
-              >
-                <Text style={styles.modalOrderButtonText}>Đặt dịch vụ ngay</Text>
-              </TouchableOpacity>
+              <View style={styles.modalActionButtons}>
+                <Pressable 
+                  style={({pressed}) => [styles.modalButton, styles.bookButton, pressed && styles.pressedItem]} 
+                  onPress={() => handleOrderService(selectedService)}
+                >
+                  <FontAwesome name="check-circle" size={18} color="white" />
+                  <Text style={styles.modalButtonText}>Đặt Ngay</Text>
+                </Pressable>
+                <Pressable 
+                  style={({pressed}) => [styles.modalButton, styles.detailsButton, pressed && styles.pressedItem]}
+                  onPress={() => alert('Navigate to service details: ' + selectedService.id)}
+                >
+                  <FontAwesome name="info-circle" size={18} color="#1890ff" />
+                  <Text style={[styles.modalButtonText, { color: '#1890ff' }]}>Xem thêm</Text>
+                </Pressable>
+              </View>
             </View>
           </View>
         )}
@@ -288,7 +298,7 @@ const { width } = Dimensions.get('window');
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: '#f0f2f5',
   },
   searchContainer: {
     flexDirection: 'row',
@@ -465,15 +475,30 @@ const styles = StyleSheet.create({
     color: '#595959',
     marginBottom: 20,
   },
-  modalOrderButton: {
+  modalActionButtons: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  modalButton: {
     backgroundColor: '#1890ff',
     borderRadius: 8,
     paddingVertical: 12,
+    paddingHorizontal: 16,
     alignItems: 'center',
   },
-  modalOrderButtonText: {
+  bookButton: {
+    backgroundColor: '#52c41a',
+  },
+  detailsButton: {
+    backgroundColor: '#1890ff',
+  },
+  modalButtonText: {
     color: 'white',
     fontSize: 16,
     fontWeight: 'bold',
+  },
+  pressedItem: {
+    opacity: 0.7,
   },
 }); 

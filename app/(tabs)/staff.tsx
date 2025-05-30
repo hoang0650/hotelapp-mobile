@@ -1,18 +1,18 @@
+import { FontAwesome } from '@expo/vector-icons';
 import React, { useState } from 'react';
 import {
-  StyleSheet,
-  View,
-  Text,
-  FlatList,
-  TouchableOpacity,
-  TextInput,
-  ScrollView,
-  Modal,
-  Image,
-  ActivityIndicator,
-  RefreshControl
+    ActivityIndicator,
+    FlatList,
+    Image,
+    Modal,
+    Pressable,
+    RefreshControl,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    View
 } from 'react-native';
-import { FontAwesome } from '@expo/vector-icons';
 
 // Định nghĩa kiểu dữ liệu
 interface Employee {
@@ -326,10 +326,13 @@ export default function StaffScreen() {
   // Render item nhân viên
   const renderEmployeeItem = ({ item }: { item: Employee }) => {
     const statusStyle = getEmployeeStatusStyle(item.status);
-    
+    const statusText = getEmployeeStatusText(item.status);
     return (
-      <TouchableOpacity 
-        style={styles.employeeCard}
+      <Pressable
+        style={({ pressed }) => [
+          styles.employeeCard,
+          pressed && styles.pressedItem
+        ]}
         onPress={() => handleEmployeePress(item)}
       >
         <View style={styles.employeeHeader}>
@@ -346,12 +349,12 @@ export default function StaffScreen() {
         <View style={styles.employeeFooter}>
           <View style={[styles.statusBadge, { backgroundColor: statusStyle.backgroundColor, borderColor: statusStyle.borderColor }]}>
             <Text style={[styles.statusText, { color: statusStyle.color }]}>
-              {getEmployeeStatusText(item.status)}
+              {statusText}
             </Text>
           </View>
           <Text style={styles.employeeSalary}>{formatCurrency(item.salary)}</Text>
         </View>
-      </TouchableOpacity>
+      </Pressable>
     );
   };
 
@@ -422,127 +425,96 @@ export default function StaffScreen() {
     <View style={styles.container}>
       {/* Thanh tìm kiếm */}
       <View style={styles.searchContainer}>
-        <View style={styles.searchBar}>
-          <FontAwesome name="search" size={16} color="#bfbfbf" style={styles.searchIcon} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Tìm kiếm nhân viên..."
-            value={searchQuery}
-            onChangeText={handleSearch}
-          />
-          {searchQuery.length > 0 && (
-            <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
-              <FontAwesome name="times-circle" size={16} color="#bfbfbf" />
-            </TouchableOpacity>
-          )}
-        </View>
+        <TextInput
+          style={styles.searchInput}
+          placeholder={`Tìm kiếm ${activeTab === 'employees' ? 'nhân viên' : activeTab === 'shifts' ? 'ca làm việc' : activeTab === 'leaves' ? 'đơn nghỉ phép' : 'bảng lương'}...`}
+          value={searchQuery}
+          onChangeText={handleSearch}
+          placeholderTextColor="#888"
+        />
+        {searchQuery.length > 0 && (
+          <Pressable onPress={() => setSearchQuery('')} style={({pressed}) => [styles.clearButton, pressed && styles.pressedItem]}>
+            <FontAwesome name="times-circle" size={20} color="#888" />
+          </Pressable>
+        )}
       </View>
 
       {/* Tab navigation */}
       <View style={styles.tabContainer}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-          <TouchableOpacity 
-            style={[styles.tabButton, activeTab === 'employees' && styles.activeTabButton]}
-            onPress={() => setActiveTab('employees')}
-          >
-            <FontAwesome 
-              name="users" 
-              size={16} 
-              color={activeTab === 'employees' ? "#1890ff" : "#8c8c8c"} 
-              style={styles.tabIcon}
-            />
-            <Text style={[styles.tabText, activeTab === 'employees' && styles.activeTabText]}>
-              Nhân viên
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.tabButton, activeTab === 'shifts' && styles.activeTabButton]}
-            onPress={() => setActiveTab('shifts')}
-          >
-            <FontAwesome 
-              name="clock-o" 
-              size={16} 
-              color={activeTab === 'shifts' ? "#1890ff" : "#8c8c8c"} 
-              style={styles.tabIcon}
-            />
-            <Text style={[styles.tabText, activeTab === 'shifts' && styles.activeTabText]}>
-              Ca làm việc
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.tabButton, activeTab === 'leaves' && styles.activeTabButton]}
-            onPress={() => setActiveTab('leaves')}
-          >
-            <FontAwesome 
-              name="calendar-minus-o" 
-              size={16} 
-              color={activeTab === 'leaves' ? "#1890ff" : "#8c8c8c"} 
-              style={styles.tabIcon}
-            />
-            <Text style={[styles.tabText, activeTab === 'leaves' && styles.activeTabText]}>
-              Ngày nghỉ
-            </Text>
-          </TouchableOpacity>
-          
-          <TouchableOpacity 
-            style={[styles.tabButton, activeTab === 'salaries' && styles.activeTabButton]}
-            onPress={() => setActiveTab('salaries')}
-          >
-            <FontAwesome 
-              name="money" 
-              size={16} 
-              color={activeTab === 'salaries' ? "#1890ff" : "#8c8c8c"} 
-              style={styles.tabIcon}
-            />
-            <Text style={[styles.tabText, activeTab === 'salaries' && styles.activeTabText]}>
-              Lương
-            </Text>
-          </TouchableOpacity>
-        </ScrollView>
+        <Pressable
+          style={({pressed}) => [styles.tabButton, activeTab === 'employees' && styles.activeTabButton, pressed && styles.pressedItem]}
+          onPress={() => setActiveTab('employees')}
+        >
+          <FontAwesome name="users" size={18} color={activeTab === 'employees' ? '#1890ff' : '#555'} style={styles.tabIcon} />
+          <Text style={[styles.tabText, activeTab === 'employees' && styles.activeTabText]}>Nhân viên</Text>
+        </Pressable>
+        <Pressable
+          style={({pressed}) => [styles.tabButton, activeTab === 'shifts' && styles.activeTabButton, pressed && styles.pressedItem]}
+          onPress={() => setActiveTab('shifts')}
+        >
+          <FontAwesome name="calendar-check-o" size={18} color={activeTab === 'shifts' ? '#1890ff' : '#555'} style={styles.tabIcon} />
+          <Text style={[styles.tabText, activeTab === 'shifts' && styles.activeTabText]}>Ca làm việc</Text>
+        </Pressable>
+        <Pressable
+          style={({pressed}) => [styles.tabButton, activeTab === 'leaves' && styles.activeTabButton, pressed && styles.pressedItem]}
+          onPress={() => setActiveTab('leaves')}
+        >
+          <FontAwesome name="calendar-times-o" size={18} color={activeTab === 'leaves' ? '#1890ff' : '#555'} style={styles.tabIcon} />
+          <Text style={[styles.tabText, activeTab === 'leaves' && styles.activeTabText]}>Nghỉ phép</Text>
+        </Pressable>
+        <Pressable
+          style={({pressed}) => [styles.tabButton, activeTab === 'salaries' && styles.activeTabButton, pressed && styles.pressedItem]}
+          onPress={() => setActiveTab('salaries')}
+        >
+          <FontAwesome name="money" size={18} color={activeTab === 'salaries' ? '#1890ff' : '#555'} style={styles.tabIcon} />
+          <Text style={[styles.tabText, activeTab === 'salaries' && styles.activeTabText]}>Lương</Text>
+        </Pressable>
       </View>
 
       {/* Nội dung chính */}
-      {renderContent()}
+      {loading ? (
+        <ActivityIndicator size="large" color="#1890ff" style={{ marginTop: 20 }}/>
+      ) : renderContent()}
 
       {/* Floating action button */}
-      <TouchableOpacity style={styles.fab}>
-        <FontAwesome name="plus" size={24} color="#fff" />
-      </TouchableOpacity>
+      {activeTab === 'employees' && (
+        <Pressable style={({pressed}) => [styles.fab, pressed && styles.pressedItem]} onPress={() => setEmployeeModalVisible(true)}>
+          <FontAwesome name="plus" size={24} color="white" />
+        </Pressable>
+      )}
 
       {/* Modal chi tiết nhân viên */}
-      <Modal
-        visible={employeeModalVisible}
-        transparent={true}
-        animationType="slide"
-        onRequestClose={() => setEmployeeModalVisible(false)}
-      >
-        {selectedEmployee && (
+      {selectedEmployee && (
+        <Modal
+          animationType="slide"
+          transparent={true}
+          visible={employeeModalVisible}
+          onRequestClose={() => setEmployeeModalVisible(false)}
+        >
           <View style={styles.modalOverlay}>
-            <View style={styles.modalContainer}>
-              <View style={styles.modalHeader}>
-                <Text style={styles.modalTitle}>Chi tiết nhân viên</Text>
-                <TouchableOpacity onPress={() => setEmployeeModalVisible(false)}>
-                  <FontAwesome name="close" size={20} color="#8c8c8c" />
-                </TouchableOpacity>
-              </View>
-              
-              <ScrollView style={styles.modalContent}>
+            <View style={styles.modalContent}>
+              <ScrollView contentContainerStyle={{ paddingBottom: 20 }}>
+                <View style={styles.modalHeader}>
+                  <Text style={styles.modalTitle}>{selectedEmployee ? 'Chi tiết nhân viên' : 'Thêm nhân viên mới'}</Text>
+                  <Pressable onPress={() => setEmployeeModalVisible(false)} style={({pressed}) => pressed && styles.pressedItem}>
+                    <FontAwesome name="times" size={24} color="#888" />
+                  </Pressable>
+                </View>
+
                 <View style={styles.profileHeader}>
                   <Image 
-                    source={{ uri: selectedEmployee.avatar }} 
+                    source={{ uri: selectedEmployee?.avatar }} 
                     style={styles.profileAvatar} 
                   />
                   <View style={styles.profileInfo}>
-                    <Text style={styles.profileName}>{selectedEmployee.name}</Text>
-                    <Text style={styles.profilePosition}>{selectedEmployee.position}</Text>
+                    <Text style={styles.profileName}>{selectedEmployee?.name}</Text>
+                    <Text style={styles.profilePosition}>{selectedEmployee?.position}</Text>
                     <View style={[
                       styles.profileStatusBadge, 
-                      { backgroundColor: getEmployeeStatusStyle(selectedEmployee.status).backgroundColor }
+                      { backgroundColor: getEmployeeStatusStyle(selectedEmployee?.status || '').backgroundColor }
                     ]}>
-                      <Text style={{ color: getEmployeeStatusStyle(selectedEmployee.status).color }}>
-                        {getEmployeeStatusText(selectedEmployee.status)}
+                      <Text style={{ color: getEmployeeStatusStyle(selectedEmployee?.status || '').color }}>
+                        {getEmployeeStatusText(selectedEmployee?.status || '')}
                       </Text>
                     </View>
                   </View>
@@ -554,13 +526,13 @@ export default function StaffScreen() {
                   <View style={styles.profileItem}>
                     <FontAwesome name="phone" size={16} color="#8c8c8c" style={styles.itemIcon} />
                     <Text style={styles.itemLabel}>Điện thoại:</Text>
-                    <Text style={styles.itemValue}>{selectedEmployee.phone}</Text>
+                    <Text style={styles.itemValue}>{selectedEmployee?.phone}</Text>
                   </View>
                   
                   <View style={styles.profileItem}>
                     <FontAwesome name="envelope" size={16} color="#8c8c8c" style={styles.itemIcon} />
                     <Text style={styles.itemLabel}>Email:</Text>
-                    <Text style={styles.itemValue}>{selectedEmployee.email}</Text>
+                    <Text style={styles.itemValue}>{selectedEmployee?.email}</Text>
                   </View>
                 </View>
                 
@@ -570,28 +542,28 @@ export default function StaffScreen() {
                   <View style={styles.profileItem}>
                     <FontAwesome name="building" size={16} color="#8c8c8c" style={styles.itemIcon} />
                     <Text style={styles.itemLabel}>Phòng ban:</Text>
-                    <Text style={styles.itemValue}>{selectedEmployee.department}</Text>
+                    <Text style={styles.itemValue}>{selectedEmployee?.department}</Text>
                   </View>
                   
                   <View style={styles.profileItem}>
                     <FontAwesome name="calendar" size={16} color="#8c8c8c" style={styles.itemIcon} />
                     <Text style={styles.itemLabel}>Ngày bắt đầu:</Text>
-                    <Text style={styles.itemValue}>{new Date(selectedEmployee.startDate).toLocaleDateString('vi-VN')}</Text>
+                    <Text style={styles.itemValue}>{new Date(selectedEmployee?.startDate || '').toLocaleDateString('vi-VN')}</Text>
                   </View>
                   
                   <View style={styles.profileItem}>
                     <FontAwesome name="money" size={16} color="#8c8c8c" style={styles.itemIcon} />
                     <Text style={styles.itemLabel}>Lương cơ bản:</Text>
-                    <Text style={styles.itemValue}>{formatCurrency(selectedEmployee.salary)}</Text>
+                    <Text style={styles.itemValue}>{formatCurrency(selectedEmployee?.salary || 0)}</Text>
                   </View>
                 </View>
                 
                 <View style={styles.profileSection}>
                   <Text style={styles.sectionTitle}>Ca làm việc gần đây</Text>
                   
-                  {shifts.filter(shift => shift.employeeId === selectedEmployee.id).length > 0 ? (
+                  {shifts.filter(shift => shift.employeeId === selectedEmployee?.id).length > 0 ? (
                     shifts
-                      .filter(shift => shift.employeeId === selectedEmployee.id)
+                      .filter(shift => shift.employeeId === selectedEmployee?.id)
                       .slice(0, 3)
                       .map(shift => (
                         <View key={shift.id} style={styles.shiftItem}>
@@ -617,9 +589,9 @@ export default function StaffScreen() {
                 <View style={styles.profileSection}>
                   <Text style={styles.sectionTitle}>Ngày nghỉ</Text>
                   
-                  {leaves.filter(leave => leave.employeeId === selectedEmployee.id).length > 0 ? (
+                  {leaves.filter(leave => leave.employeeId === selectedEmployee?.id).length > 0 ? (
                     leaves
-                      .filter(leave => leave.employeeId === selectedEmployee.id)
+                      .filter(leave => leave.employeeId === selectedEmployee?.id)
                       .map(leave => (
                         <View key={leave.id} style={styles.leaveItem}>
                           <View style={styles.leavePeriod}>
@@ -645,9 +617,9 @@ export default function StaffScreen() {
                 <View style={styles.profileSection}>
                   <Text style={styles.sectionTitle}>Lương gần đây</Text>
                   
-                  {salaries.filter(salary => salary.employeeId === selectedEmployee.id).length > 0 ? (
+                  {salaries.filter(salary => salary.employeeId === selectedEmployee?.id).length > 0 ? (
                     salaries
-                      .filter(salary => salary.employeeId === selectedEmployee.id)
+                      .filter(salary => salary.employeeId === selectedEmployee?.id)
                       .slice(0, 3)
                       .map(salary => (
                         <View key={salary.id} style={styles.salaryItem}>
@@ -690,8 +662,8 @@ export default function StaffScreen() {
               </ScrollView>
 
               <View style={styles.modalFooter}>
-                <TouchableOpacity 
-                  style={[styles.footerButton, styles.editButton]}
+                <Pressable
+                  style={({pressed}) => [styles.footerButton, styles.editButton, pressed && styles.pressedItem]}
                   onPress={() => {
                     // Xử lý chỉnh sửa
                     setEmployeeModalVisible(false);
@@ -699,19 +671,19 @@ export default function StaffScreen() {
                 >
                   <FontAwesome name="edit" size={16} color="#fff" style={styles.buttonIcon} />
                   <Text style={styles.buttonText}>Chỉnh sửa</Text>
-                </TouchableOpacity>
+                </Pressable>
                 
-                <TouchableOpacity 
-                  style={[styles.footerButton, styles.closeButton]}
+                <Pressable
+                  style={({pressed}) => [styles.footerButton, styles.closeButton, pressed && styles.pressedItem]}
                   onPress={() => setEmployeeModalVisible(false)}
                 >
                   <Text style={styles.closeButtonText}>Đóng</Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </View>
           </View>
-        )}
-      </Modal>
+        </Modal>
+      )}
     </View>
   );
 }
@@ -1188,5 +1160,8 @@ const styles = StyleSheet.create({
   closeButtonText: {
     color: '#595959',
     fontSize: 16,
+  },
+  pressedItem: {
+    opacity: 0.7,
   },
 }); 

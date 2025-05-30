@@ -126,7 +126,11 @@ export const fetchCurrentUser = createAsyncThunk<
       if (!token) {
         return rejectWithValue({ success: false, message: 'No token found, user needs to login.' } as ApiErrorResponse);
       }
-      const response = await apiClient.get<ApiResponse<User>>(API_ENDPOINTS.USER_INFO);
+      const response = await apiClient.get<ApiResponse<User>>(API_ENDPOINTS.USER_INFO, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
 
       if (response.data.success && response.data.data) {
         return { user: response.data.data, token };

@@ -42,9 +42,35 @@ const middlewares: Middleware[] = []; // Sử dụng Middleware[] từ Redux Too
 
 if (process.env.NODE_ENV === 'development') {
   // Chỉ import và sử dụng logger trong môi trường development
-  const { createLogger } = require('redux-logger'); // Sử dụng require để tránh lỗi import trong production build
-  const logger = createLogger({});
-  middlewares.push(logger as Middleware); // Ép kiểu logger thành Middleware nếu cần
+  const { createLogger } = require('redux-logger'); 
+  
+  const loggerOptions = {
+    titleFormatter: (action: any, time: string, took: number) => {
+      const parts = action.type.split('/');
+      const module = parts.length > 1 ? parts[0].toUpperCase() : 'GENERAL';
+      return `action @ ${time} [${module}] ${action.type} (in ${took.toFixed(2)} ms)`;
+    },
+    colors: {
+      title: (action: any) => {
+        if (action.type.startsWith('auth/')) return '#007bff'; // Blue for auth
+        if (action.type.startsWith('booking/')) return '#28a745'; // Green for booking
+        if (action.type.startsWith('room/')) return '#ffc107'; // Yellow for room
+        if (action.type.startsWith('user/')) return '#6f42c1'; // Purple for user
+        if (action.type.startsWith('hotel/')) return '#fd7e14'; // Orange for hotel
+        // Add more colors for other slices (e.g., from @/app or other @/store features)
+        return '#343a40'; // Default dark grey
+      },
+      prevState: () => '#adb5bd',
+      action: () => '#17a2b8',
+      nextState: () => '#20c997',
+      error: () => '#dc3545',
+    },
+    collapsed: true, // Collapse logs by default for cleaner output
+    diff: true, // Show diff between prev and next state
+  };
+
+  const logger = createLogger(loggerOptions);
+  middlewares.push(logger as Middleware); 
 }
 
 export const store = configureStore({

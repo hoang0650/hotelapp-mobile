@@ -2,7 +2,7 @@ import { FontAwesome } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Dimensions, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { selectAuthError, selectAuthStatus, selectIsAuthenticated, selectIsTwoFactorRequired, selectTwoFactorUserId } from '../../store/selectors/authSelectors';
 import { clearAuthError, resetTwoFactor } from '../../store/slices/authSlice';
@@ -31,10 +31,10 @@ export default function LoginScreen() {
   const [emailFocused, setEmailFocused] = useState(false);
   const [passwordFocused, setPasswordFocused] = useState(false);
   const [twoFactorCodeFocused, setTwoFactorCodeFocused] = useState(false);
-
+  
   useEffect(() => {
     if (isAuthenticated) {
-      router.replace('/(tabs)');
+      router.replace('/(tabs)/profile');
       return;
     }
 
@@ -43,9 +43,17 @@ export default function LoginScreen() {
       dispatch(clearAuthError());
     }
     if (authStatus === 'succeeded' && !isTwoFactorRequired && !isAuthenticated) {
-      router.replace('/(tabs)'); 
+      router.replace('/(tabs)/profile'); 
     }
   }, [authStatus, authError, dispatch, isTwoFactorRequired, isAuthenticated]);
+
+  if (isAuthenticated) {
+    return (
+      <View style={styles.fullScreenLoader}> 
+        <ActivityIndicator size="large" color="#1890ff" />
+      </View>
+    );
+  }
 
   const clearAllErrors = () => {
     setEmailError(null);
@@ -69,7 +77,7 @@ export default function LoginScreen() {
         isValid = false;
       }
       if (isValid) {
-        dispatch(loginUser({ email, password, twoFactorCode }));
+      dispatch(loginUser({ email, password, twoFactorCode }));
       }
     } else {
       if (!email) {
@@ -87,7 +95,7 @@ export default function LoginScreen() {
         isValid = false;
       }
       if (isValid) {
-        dispatch(loginUser({ email, password }));
+      dispatch(loginUser({ email, password }));
       } else if (!email && !password) {
         setFormError('Vui lòng nhập email và mật khẩu.');
       }
@@ -109,104 +117,114 @@ export default function LoginScreen() {
       colors={['#E0EAFC', '#CFDEF3', '#E0EAFC']}
       style={styles.gradientContainer}
     >
-      <KeyboardAvoidingView 
+    <KeyboardAvoidingView 
         style={styles.keyboardAvoidingContainer}
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
-      >
-        <ScrollView contentContainerStyle={styles.scrollContent}>
-          <View style={styles.logoContainer}>
-            <Image
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+    >
+      <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.logoContainer}>
+          <Image
               source={{ uri: 'https://placekitten.com/250/250' }}
-              style={styles.logo}
-            />
-            <Text style={styles.appName}>Phần mềm Quản lý Khách sạn</Text>
-            <Text style={styles.slogan}>Giải pháp quản lý toàn diện cho khách sạn của bạn</Text>
-          </View>
+            style={styles.logo}
+          />
+          <Text style={styles.appName}>Phần mềm Quản lý Khách sạn</Text>
+          <Text style={styles.slogan}>Giải pháp quản lý toàn diện cho khách sạn của bạn</Text>
+        </View>
 
-          <View style={styles.formContainer}>
-            {isTwoFactorRequired ? (
-              <>
+        <View style={styles.formContainer}>
+          {isTwoFactorRequired ? (
+            <>
                 <Text style={styles.welcomeText} testID="twoFactorAuthTitle">Xác thực hai yếu tố</Text>
-                <Text style={styles.instructionText}>
+              <Text style={styles.instructionText}>
                   Vui lòng nhập mã từ ứng dụng Authenticator của bạn.
-                </Text>
+              </Text>
                 <View style={[styles.inputContainer, twoFactorCodeFocused && styles.inputContainerFocused]}>
                   <FontAwesome name="shield" size={22} color={twoFactorCodeFocused ? '#1890ff' : '#bfbfbf'} style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Mã xác thực (6 chữ số)"
-                    value={twoFactorCode}
+                <TextInput
+                  style={styles.input}
+                  placeholder="Mã xác thực (6 chữ số)"
+                  value={twoFactorCode}
                     onChangeText={(text) => {
                       setTwoFactorCode(text);
                       if (twoFactorCodeError) setTwoFactorCodeError(null);
                       if (formError) setFormError(null);
                     }}
-                    keyboardType="number-pad"
-                    maxLength={6}
+                  keyboardType="number-pad"
+                  maxLength={6}
                     onFocus={() => setTwoFactorCodeFocused(true)}
                     onBlur={() => setTwoFactorCodeFocused(false)}
-                  />
-                </View>
+                />
+              </View>
                 {twoFactorCodeError && <Text style={styles.errorText}>{twoFactorCodeError}</Text>}
                 {formError && !twoFactorCodeError && <Text style={styles.errorText}>{formError}</Text>}
 
-                <TouchableOpacity 
-                  onPress={handleLogin}
-                  disabled={isLoading}
-                  testID="confirmTwoFactorButton"
+              <Pressable
+                onPress={handleLogin}
+                disabled={isLoading}
+                testID="confirmTwoFactorButton"
+                style={({ pressed }) => [
+                  styles.buttonBase,
+                  isLoading ? styles.buttonDisabled : styles.buttonEnabled,
+                  pressed && styles.buttonPressed,
+                  styles.marginTopLarge
+                ]}
+              >
+                <LinearGradient
+                  colors={isLoading ? ['#91caff', '#ADC8FF'] : ['#1890ff', '#0050b3']}
+                  style={styles.loginButtonGradient}
                 >
-                  <LinearGradient
-                    colors={isLoading ? ['#91caff', '#ADC8FF'] : ['#1890ff', '#0050b3']}
-                    style={[styles.loginButton, styles.marginTopLarge]}
-                  >
-                    {isLoading ? (
-                      <ActivityIndicator color="white" />
-                    ) : (
-                      <Text style={styles.loginButtonText}>Xác nhận</Text>
-                    )}
-                  </LinearGradient>
-                </TouchableOpacity>
+                  {isLoading ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text style={styles.loginButtonText}>Xác nhận</Text>
+                  )}
+                </LinearGradient>
+              </Pressable>
 
-                <TouchableOpacity 
-                  style={styles.cancelButton}
-                  onPress={handleCancelTwoFactor}
-                  disabled={isLoading}
-                  testID="cancelTwoFactorButton"
-                >
-                  <Text style={styles.cancelButtonText}>Hủy</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.cancelButton,
+                  pressed && styles.buttonPressed,
+                  isLoading && styles.buttonDisabled,
+                ]}
+                onPress={handleCancelTwoFactor}
+                disabled={isLoading}
+                testID="cancelTwoFactorButton"
+              >
+                <Text style={styles.cancelButtonText}>Hủy</Text>
+              </Pressable>
+            </>
+          ) : (
+            <>
                 <Text style={styles.welcomeText} testID="loginTitle">Đăng nhập</Text>
-                
+              
                 <View style={[styles.inputContainer, emailFocused && styles.inputContainerFocused]}>
                   <FontAwesome name="envelope" size={20} color={emailFocused ? '#1890ff' : '#bfbfbf'} style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
+                <TextInput
+                  style={styles.input}
                     placeholder="Địa chỉ Email"
-                    value={email}
+                  value={email}
                     onChangeText={(text) => {
                       setEmail(text);
                       if (emailError) setEmailError(null);
                       if (formError) setFormError(null);
                     }}
-                    autoCapitalize="none"
-                    keyboardType="email-address"
+                  autoCapitalize="none"
+                  keyboardType="email-address"
                     onFocus={() => setEmailFocused(true)}
                     onBlur={() => setEmailFocused(false)}
-                  />
-                </View>
+                />
+              </View>
                 {emailError && <Text style={styles.errorText}>{emailError}</Text>}
-                
+              
                 <View style={[styles.inputContainer, passwordFocused && styles.inputContainerFocused]}>
                   <FontAwesome name="lock" size={22} color={passwordFocused ? '#1890ff' : '#bfbfbf'} style={styles.inputIcon} />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="Mật khẩu"
-                    secureTextEntry={!showPassword}
-                    value={password}
+                <TextInput
+                  style={styles.input}
+                  placeholder="Mật khẩu"
+                  secureTextEntry={!showPassword}
+                  value={password}
                     onChangeText={(text) => {
                       setPassword(text);
                       if (passwordError) setPasswordError(null);
@@ -214,58 +232,64 @@ export default function LoginScreen() {
                     }}
                     onFocus={() => setPasswordFocused(true)}
                     onBlur={() => setPasswordFocused(false)}
-                  />
-                  <TouchableOpacity 
-                    style={styles.eyeIcon}
-                    onPress={() => setShowPassword(!showPassword)}
-                  >
-                    <FontAwesome name={showPassword ? 'eye-slash' : 'eye'} size={20} color="#bfbfbf" />
-                  </TouchableOpacity>
-                </View>
+                />
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.eyeIcon,
+                    pressed && styles.buttonPressed
+                  ]}
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  <FontAwesome name={showPassword ? 'eye-slash' : 'eye'} size={20} color="#bfbfbf" />
+                </Pressable>
+              </View>
                 {passwordError && <Text style={styles.errorText}>{passwordError}</Text>}
                 {formError && !emailError && !passwordError && <Text style={styles.errorText}>{formError}</Text>}
 
-                <View style={styles.forgotPasswordContainer}>
-                  <TouchableOpacity onPress={() => router.push('/forgot-password')}>
-                    <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
-                  </TouchableOpacity>
-                </View>
+              <View style={styles.forgotPasswordContainer}>
+                <Pressable onPress={() => router.push('/forgot-password')} style={({ pressed }) => pressed && styles.linkPressed}>
+                  <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+                </Pressable>
+              </View>
 
-                <TouchableOpacity 
-                  onPress={handleLogin}
-                  disabled={isLoading}
-                  testID="loginButton"
+              <Pressable
+                onPress={handleLogin}
+                disabled={isLoading}
+                testID="loginButton"
+                style={({ pressed }) => [
+                  styles.buttonBase,
+                  isLoading ? styles.buttonDisabled : styles.buttonEnabled,
+                  pressed && styles.buttonPressed,
+                  (!formError && !emailError && !passwordError) ? styles.marginTopLarge : styles.marginTopSmall
+                ]}
+              >
+                <LinearGradient
+                   colors={isLoading ? ['#91caff', '#ADC8FF'] : ['#1890ff', '#0050b3']}
+                   style={styles.loginButtonGradient}
                 >
-                  <LinearGradient
-                     colors={isLoading ? ['#91caff', '#ADC8FF'] : ['#1890ff', '#0050b3']}
-                     style={[styles.loginButton, (!formError && !emailError && !passwordError) ? styles.marginTopLarge : styles.marginTopSmall]}
-                  >
-                    {isLoading ? (
-                      <ActivityIndicator color="white" />
-                    ) : (
-                      <View style={{flexDirection: 'row', alignItems: 'center'}}>
-                        <Text style={styles.loginButtonText}>Đăng nhập </Text>
-                        <FontAwesome name="arrow-right" size={16} color="white" style={{marginLeft: 8}}/>
-                      </View>
-                    )}
-                  </LinearGradient>
-                </TouchableOpacity>
-                
-                <View style={styles.registerContainer}>
-                  <Text style={styles.registerText}>Chưa có tài khoản? </Text>
-                  <TouchableOpacity onPress={() => router.push('/register')}>
-                    <Text style={styles.registerLink}>Đăng ký ngay</Text>
-                  </TouchableOpacity>
-                </View>
-              </>
-            )}
-          </View>
+                  {isLoading ? (
+                    <ActivityIndicator color="white" />
+                  ) : (
+                    <Text style={styles.loginButtonText}>Đăng nhập</Text>
+                  )}
+                </LinearGradient>
+              </Pressable>
+              
+              <View style={styles.registerContainer}>
+                <Text style={styles.registerText}>Chưa có tài khoản? </Text>
+                <Pressable onPress={() => router.push('/register')} style={({ pressed }) => pressed && styles.linkPressed}>
+                  <Text style={styles.registerLink}>Đăng ký ngay</Text>
+                </Pressable>
+              </View>
+            </>
+          )}
+        </View>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>Phiên bản 1.0.0</Text>
-          </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+        <View style={styles.footer}>
+          <Text style={styles.footerText}>Phiên bản 1.0.0</Text>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
     </LinearGradient>
   );
 }
@@ -310,14 +334,23 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.95)',
     borderRadius: 20,
     padding: 30,
-    shadowColor: '#000',
-    shadowOffset: {
-      width: 0,
-      height: 5,
-    },
-    shadowOpacity: 0.2,
-    shadowRadius: 12,
-    elevation: 10,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: {
+          width: 0,
+          height: 5,
+        },
+        shadowOpacity: 0.2,
+        shadowRadius: 12,
+      },
+      android: {
+        elevation: 10,
+      },
+      web: {
+        boxShadow: '0px 5px 12px rgba(0, 0, 0, 0.2)',
+      }
+    }),
     marginBottom: 25,
   },
   welcomeText: {
@@ -435,5 +468,34 @@ const styles = StyleSheet.create({
     color: '#263238',
     fontSize: 17,
     fontWeight: 'bold',
+  },
+  fullScreenLoader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#f0f2f5',
+  },
+  loginButtonGradient: {
+    paddingVertical: 15,
+    paddingHorizontal: 20,
+    borderRadius: 25,
+    alignItems: 'center',
+    justifyContent: 'center',
+    width: '100%',
+  },
+  buttonBase: {
+    width: '100%',
+    borderRadius: 25,
+  },
+  buttonEnabled: {
+  },
+  buttonDisabled: {
+    opacity: 0.7,
+  },
+  buttonPressed: {
+    opacity: 0.8,
+  },
+  linkPressed: {
+    opacity: 0.7,
   },
 }); 
