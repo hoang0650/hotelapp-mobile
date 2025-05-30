@@ -1,11 +1,14 @@
 import { FontAwesome } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import { router } from 'expo-router';
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Alert, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Dimensions, Image, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { useAppDispatch, useAppSelector } from '../../store';
 import { selectAuthError, selectAuthStatus, selectIsAuthenticated, selectIsTwoFactorRequired, selectTwoFactorUserId } from '../../store/selectors/authSelectors';
 import { clearAuthError, resetTwoFactor } from '../../store/slices/authSlice';
 import { loginUser } from '../../store/thunks/authThunks';
+
+const { height } = Dimensions.get('window');
 
 export default function LoginScreen() {
   const dispatch = useAppDispatch();
@@ -20,6 +23,15 @@ export default function LoginScreen() {
   const [twoFactorCode, setTwoFactorCode] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   
+  const [emailError, setEmailError] = useState<string | null>(null);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [twoFactorCodeError, setTwoFactorCodeError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
+
+  const [emailFocused, setEmailFocused] = useState(false);
+  const [passwordFocused, setPasswordFocused] = useState(false);
+  const [twoFactorCodeFocused, setTwoFactorCodeFocused] = useState(false);
+
   useEffect(() => {
     if (isAuthenticated) {
       router.replace('/(tabs)');
@@ -27,7 +39,7 @@ export default function LoginScreen() {
     }
 
     if (authError && authStatus === 'failed') {
-      Alert.alert('Đăng nhập thất bại', authError.message);
+      setFormError(authError.message);
       dispatch(clearAuthError());
     }
     if (authStatus === 'succeeded' && !isTwoFactorRequired && !isAuthenticated) {
@@ -35,24 +47,50 @@ export default function LoginScreen() {
     }
   }, [authStatus, authError, dispatch, isTwoFactorRequired, isAuthenticated]);
 
+  const clearAllErrors = () => {
+    setEmailError(null);
+    setPasswordError(null);
+    setTwoFactorCodeError(null);
+    setFormError(null);
+  };
+
   const handleLogin = () => {
+    clearAllErrors();
+    let isValid = true;
+
     if (isTwoFactorRequired) {
       if (!twoFactorCode) {
-        Alert.alert('Lỗi', 'Vui lòng nhập mã xác thực 2 yếu tố.');
-        return;
+        setTwoFactorCodeError('Vui lòng nhập mã xác thực.');
+        isValid = false;
       }
       if (!twoFactorUserId) {
-        Alert.alert('Lỗi', 'Thiếu thông tin người dùng cho xác thực 2 yếu tố.');
+        setFormError('Lỗi xác thực hai yếu tố. Vui lòng thử lại.');
         dispatch(resetTwoFactor());
-        return;
+        isValid = false;
       }
-      dispatch(loginUser({ email, password, twoFactorCode }));
+      if (isValid) {
+        dispatch(loginUser({ email, password, twoFactorCode }));
+      }
     } else {
-      if (!email || !password) {
-        Alert.alert('Lỗi', 'Vui lòng nhập email và mật khẩu.');
-        return;
+      if (!email) {
+        setEmailError('Vui lòng nhập email.');
+        isValid = false;
+      } else {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(email)) {
+          setEmailError('Email không hợp lệ.');
+          isValid = false;
+        }
       }
-      dispatch(loginUser({ email, password }));
+      if (!password) {
+        setPasswordError('Vui lòng nhập mật khẩu.');
+        isValid = false;
+      }
+      if (isValid) {
+        dispatch(loginUser({ email, password }));
+      } else if (!email && !password) {
+        setFormError('Vui lòng nhập email và mật khẩu.');
+      }
     }
   };
 
@@ -61,269 +99,341 @@ export default function LoginScreen() {
     setEmail('');
     setPassword('');
     setTwoFactorCode('');
+    clearAllErrors();
   };
 
   const isLoading = authStatus === 'loading';
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+    <LinearGradient
+      colors={['#E0EAFC', '#CFDEF3', '#E0EAFC']}
+      style={styles.gradientContainer}
     >
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.logoContainer}>
-          <Image
-            source={{ uri: 'https://placekitten.com/200/200' }}
-            style={styles.logo}
-          />
-          <Text style={styles.appName}>Phần mềm Quản lý Khách sạn</Text>
-          <Text style={styles.slogan}>Giải pháp quản lý toàn diện cho khách sạn của bạn</Text>
-        </View>
+      <KeyboardAvoidingView 
+        style={styles.keyboardAvoidingContainer}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 64 : 0}
+      >
+        <ScrollView contentContainerStyle={styles.scrollContent}>
+          <View style={styles.logoContainer}>
+            <Image
+              source={{ uri: 'https://placekitten.com/250/250' }}
+              style={styles.logo}
+            />
+            <Text style={styles.appName}>Phần mềm Quản lý Khách sạn</Text>
+            <Text style={styles.slogan}>Giải pháp quản lý toàn diện cho khách sạn của bạn</Text>
+          </View>
 
-        <View style={styles.formContainer}>
-          {isTwoFactorRequired ? (
-            <>
-              <Text style={styles.welcomeText} testID="twoFactorAuthTitle">Xác thực hai yếu tố</Text>
-              <Text style={styles.instructionText}>
-                Vui lòng nhập mã xác thực từ ứng dụng Authenticator của bạn.
-              </Text>
-              <View style={styles.inputContainer}>
-                <FontAwesome name="shield" size={20} color="#bfbfbf" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Mã xác thực (6 chữ số)"
-                  value={twoFactorCode}
-                  onChangeText={setTwoFactorCode}
-                  keyboardType="number-pad"
-                  maxLength={6}
-                />
-              </View>
-              <TouchableOpacity 
-                style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
-                onPress={handleLogin}
-                disabled={isLoading}
-                testID="confirmTwoFactorButton"
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={styles.loginButtonText}>Xác nhận</Text>
-                )}
-              </TouchableOpacity>
-              <TouchableOpacity 
-                style={styles.cancelButton}
-                onPress={handleCancelTwoFactor}
-                disabled={isLoading}
-                testID="cancelTwoFactorButton"
-              >
-                <Text style={styles.cancelButtonText}>Hủy</Text>
-              </TouchableOpacity>
-            </>
-          ) : (
-            <>
-              <Text style={styles.welcomeText} testID="loginTitle">Đăng nhập</Text>
-              
-              <View style={styles.inputContainer}>
-                <FontAwesome name="envelope" size={20} color="#bfbfbf" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Email"
-                  value={email}
-                  onChangeText={setEmail}
-                  autoCapitalize="none"
-                  keyboardType="email-address"
-                />
-              </View>
-              
-              <View style={styles.inputContainer}>
-                <FontAwesome name="lock" size={20} color="#bfbfbf" style={styles.inputIcon} />
-                <TextInput
-                  style={styles.input}
-                  placeholder="Mật khẩu"
-                  secureTextEntry={!showPassword}
-                  value={password}
-                  onChangeText={setPassword}
-                />
+          <View style={styles.formContainer}>
+            {isTwoFactorRequired ? (
+              <>
+                <Text style={styles.welcomeText} testID="twoFactorAuthTitle">Xác thực hai yếu tố</Text>
+                <Text style={styles.instructionText}>
+                  Vui lòng nhập mã từ ứng dụng Authenticator của bạn.
+                </Text>
+                <View style={[styles.inputContainer, twoFactorCodeFocused && styles.inputContainerFocused]}>
+                  <FontAwesome name="shield" size={22} color={twoFactorCodeFocused ? '#1890ff' : '#bfbfbf'} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Mã xác thực (6 chữ số)"
+                    value={twoFactorCode}
+                    onChangeText={(text) => {
+                      setTwoFactorCode(text);
+                      if (twoFactorCodeError) setTwoFactorCodeError(null);
+                      if (formError) setFormError(null);
+                    }}
+                    keyboardType="number-pad"
+                    maxLength={6}
+                    onFocus={() => setTwoFactorCodeFocused(true)}
+                    onBlur={() => setTwoFactorCodeFocused(false)}
+                  />
+                </View>
+                {twoFactorCodeError && <Text style={styles.errorText}>{twoFactorCodeError}</Text>}
+                {formError && !twoFactorCodeError && <Text style={styles.errorText}>{formError}</Text>}
+
                 <TouchableOpacity 
-                  style={styles.eyeIcon}
-                  onPress={() => setShowPassword(!showPassword)}
+                  onPress={handleLogin}
+                  disabled={isLoading}
+                  testID="confirmTwoFactorButton"
                 >
-                  <FontAwesome name={showPassword ? 'eye-slash' : 'eye'} size={20} color="#bfbfbf" />
+                  <LinearGradient
+                    colors={isLoading ? ['#91caff', '#ADC8FF'] : ['#1890ff', '#0050b3']}
+                    style={[styles.loginButton, styles.marginTopLarge]}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator color="white" />
+                    ) : (
+                      <Text style={styles.loginButtonText}>Xác nhận</Text>
+                    )}
+                  </LinearGradient>
                 </TouchableOpacity>
-              </View>
 
-              <View style={styles.forgotPasswordContainer}>
-                <TouchableOpacity onPress={() => router.push('/forgot-password')}>
-                  <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+                <TouchableOpacity 
+                  style={styles.cancelButton}
+                  onPress={handleCancelTwoFactor}
+                  disabled={isLoading}
+                  testID="cancelTwoFactorButton"
+                >
+                  <Text style={styles.cancelButtonText}>Hủy</Text>
                 </TouchableOpacity>
-              </View>
+              </>
+            ) : (
+              <>
+                <Text style={styles.welcomeText} testID="loginTitle">Đăng nhập</Text>
+                
+                <View style={[styles.inputContainer, emailFocused && styles.inputContainerFocused]}>
+                  <FontAwesome name="envelope" size={20} color={emailFocused ? '#1890ff' : '#bfbfbf'} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Địa chỉ Email"
+                    value={email}
+                    onChangeText={(text) => {
+                      setEmail(text);
+                      if (emailError) setEmailError(null);
+                      if (formError) setFormError(null);
+                    }}
+                    autoCapitalize="none"
+                    keyboardType="email-address"
+                    onFocus={() => setEmailFocused(true)}
+                    onBlur={() => setEmailFocused(false)}
+                  />
+                </View>
+                {emailError && <Text style={styles.errorText}>{emailError}</Text>}
+                
+                <View style={[styles.inputContainer, passwordFocused && styles.inputContainerFocused]}>
+                  <FontAwesome name="lock" size={22} color={passwordFocused ? '#1890ff' : '#bfbfbf'} style={styles.inputIcon} />
+                  <TextInput
+                    style={styles.input}
+                    placeholder="Mật khẩu"
+                    secureTextEntry={!showPassword}
+                    value={password}
+                    onChangeText={(text) => {
+                      setPassword(text);
+                      if (passwordError) setPasswordError(null);
+                      if (formError) setFormError(null);
+                    }}
+                    onFocus={() => setPasswordFocused(true)}
+                    onBlur={() => setPasswordFocused(false)}
+                  />
+                  <TouchableOpacity 
+                    style={styles.eyeIcon}
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    <FontAwesome name={showPassword ? 'eye-slash' : 'eye'} size={20} color="#bfbfbf" />
+                  </TouchableOpacity>
+                </View>
+                {passwordError && <Text style={styles.errorText}>{passwordError}</Text>}
+                {formError && !emailError && !passwordError && <Text style={styles.errorText}>{formError}</Text>}
 
-              <TouchableOpacity 
-                style={[styles.loginButton, isLoading && styles.loginButtonDisabled]}
-                onPress={handleLogin}
-                disabled={isLoading}
-                testID="loginButton"
-              >
-                {isLoading ? (
-                  <ActivityIndicator color="white" />
-                ) : (
-                  <Text style={styles.loginButtonText}>Đăng nhập</Text>
-                )}
-              </TouchableOpacity>
-              
-              <View style={styles.registerContainer}>
-                <Text style={styles.registerText}>Chưa có tài khoản? </Text>
-                <TouchableOpacity onPress={() => router.push('/register')}>
-                  <Text style={styles.registerLink}>Đăng ký ngay</Text>
+                <View style={styles.forgotPasswordContainer}>
+                  <TouchableOpacity onPress={() => router.push('/forgot-password')}>
+                    <Text style={styles.forgotPasswordText}>Quên mật khẩu?</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity 
+                  onPress={handleLogin}
+                  disabled={isLoading}
+                  testID="loginButton"
+                >
+                  <LinearGradient
+                     colors={isLoading ? ['#91caff', '#ADC8FF'] : ['#1890ff', '#0050b3']}
+                     style={[styles.loginButton, (!formError && !emailError && !passwordError) ? styles.marginTopLarge : styles.marginTopSmall]}
+                  >
+                    {isLoading ? (
+                      <ActivityIndicator color="white" />
+                    ) : (
+                      <View style={{flexDirection: 'row', alignItems: 'center'}}>
+                        <Text style={styles.loginButtonText}>Đăng nhập </Text>
+                        <FontAwesome name="arrow-right" size={16} color="white" style={{marginLeft: 8}}/>
+                      </View>
+                    )}
+                  </LinearGradient>
                 </TouchableOpacity>
-              </View>
-            </>
-          )}
-        </View>
+                
+                <View style={styles.registerContainer}>
+                  <Text style={styles.registerText}>Chưa có tài khoản? </Text>
+                  <TouchableOpacity onPress={() => router.push('/register')}>
+                    <Text style={styles.registerLink}>Đăng ký ngay</Text>
+                  </TouchableOpacity>
+                </View>
+              </>
+            )}
+          </View>
 
-        <View style={styles.footer}>
-          <Text style={styles.footerText}>Phiên bản 1.0.0</Text>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+          <View style={styles.footer}>
+            <Text style={styles.footerText}>Phiên bản 1.0.0</Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </LinearGradient>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  gradientContainer: {
     flex: 1,
-    backgroundColor: '#f0f2f5',
+  },
+  keyboardAvoidingContainer: {
+    flex: 1,
   },
   scrollContent: {
     flexGrow: 1,
-    paddingHorizontal: 20,
-    paddingVertical: 40,
-    justifyContent: 'space-between',
+    paddingHorizontal: 30,
+    paddingVertical: 60,
+    justifyContent: 'center',
   },
   logoContainer: {
     alignItems: 'center',
-    marginBottom: 30,
+    marginBottom: 40,
   },
   logo: {
-    width: 100,
-    height: 100,
-    borderRadius: 20,
-    marginBottom: 15,
+    width: 130,
+    height: 130,
+    borderRadius: 30,
+    marginBottom: 25,
   },
   appName: {
-    fontSize: 22,
+    fontSize: 28,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 5,
+    color: '#1A237E',
+    marginBottom: 10,
     textAlign: 'center',
   },
   slogan: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 16,
+    color: '#37474F',
     textAlign: 'center',
+    fontStyle: 'italic',
   },
   formContainer: {
-    backgroundColor: 'white',
-    borderRadius: 10,
-    padding: 20,
-    boxShadow: '0px 2px 4px rgba(0, 0, 0, 0.1)',
-    elevation: 3,
+    backgroundColor: 'rgba(255, 255, 255, 0.95)',
+    borderRadius: 20,
+    padding: 30,
+    shadowColor: '#000',
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 12,
+    elevation: 10,
+    marginBottom: 25,
   },
   welcomeText: {
-    fontSize: 20,
+    fontSize: 26,
     fontWeight: 'bold',
-    color: '#333',
-    marginBottom: 20,
+    color: '#0D47A1',
+    marginBottom: 30,
     textAlign: 'center',
   },
   instructionText: {
-    fontSize: 14,
-    color: '#666',
-    marginBottom: 20,
+    fontSize: 15,
+    color: '#455A64',
+    marginBottom: 30,
     textAlign: 'center',
-    lineHeight: 20,
+    lineHeight: 22,
   },
   inputContainer: {
     flexDirection: 'row',
     alignItems: 'center',
     borderWidth: 1,
-    borderColor: '#e8e8e8',
-    borderRadius: 8,
-    marginBottom: 15,
-    paddingHorizontal: 10,
-    height: 50,
-    backgroundColor: '#f9f9f9',
+    borderColor: '#B0BEC5',
+    borderRadius: 12,
+    marginBottom: 10,
+    paddingHorizontal: 15,
+    height: 60,
+    backgroundColor: '#FFFFFF',
+  },
+  inputContainerFocused: {
+    borderColor: '#1565C0',
+    borderWidth: 2,
+    backgroundColor: '#E3F2FD',
   },
   inputIcon: {
-    marginRight: 10,
+    marginRight: 15,
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    color: '#333',
+    fontSize: 17,
+    color: '#263238',
   },
   eyeIcon: {
-    padding: 5,
+    padding: 10,
+  },
+  errorText: {
+    color: '#D32F2F',
+    fontSize: 14,
+    marginBottom: 15,
+    paddingLeft: 8,
+    fontWeight: '500',
   },
   forgotPasswordContainer: {
     alignItems: 'flex-end',
-    marginBottom: 20,
+    marginBottom: 25,
+    marginTop: 10,
   },
   forgotPasswordText: {
-    color: '#1890ff',
-    fontSize: 14,
+    color: '#1565C0',
+    fontSize: 15,
+    fontWeight: 'bold',
   },
   loginButton: {
-    backgroundColor: '#1890ff',
-    borderRadius: 8,
-    height: 50,
+    borderRadius: 12,
+    height: 60,
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  loginButtonDisabled: {
-    backgroundColor: '#91caff',
+    flexDirection: 'row',
+    elevation: 3,
   },
   loginButtonText: {
     color: 'white',
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
+  },
+  marginTopSmall: {
+    marginTop: 10,
+  },
+  marginTopLarge: {
+    marginTop: 30,
   },
   registerContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
-    marginTop: 20,
+    marginTop: 30,
+    paddingBottom: 15,
   },
   registerText: {
-    fontSize: 14,
-    color: '#666',
+    fontSize: 15,
+    color: '#455A64',
   },
   registerLink: {
-    fontSize: 14,
-    color: '#1890ff',
+    fontSize: 15,
+    color: '#1565C0',
     fontWeight: 'bold',
   },
   footer: {
-    marginTop: 40,
+    marginTop: 25,
     alignItems: 'center',
+    paddingBottom: Platform.OS === 'ios' ? 25 : 35,
   },
   footerText: {
-    color: '#999',
-    fontSize: 12,
+    color: '#78909C',
+    fontSize: 13,
   },
   cancelButton: {
-    marginTop: 15,
-    backgroundColor: '#f0f2f5',
-    borderRadius: 8,
-    height: 50,
+    marginTop: 20,
+    backgroundColor: 'transparent',
+    borderRadius: 12,
+    height: 60,
     justifyContent: 'center',
     alignItems: 'center',
-    borderWidth: 1,
-    borderColor: '#d9d9d9'
+    borderWidth: 1.5,
+    borderColor: '#78909C',
   },
   cancelButtonText: {
-    color: '#595959',
-    fontSize: 16,
+    color: '#263238',
+    fontSize: 17,
     fontWeight: 'bold',
   },
 }); 
